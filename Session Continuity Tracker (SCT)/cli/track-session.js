@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // track-session.js
+// Adds --filter flag to show sessions by tag
 
 import fs from 'fs';
 import path from 'path';
@@ -15,7 +16,7 @@ const stateFile = path.join(projectRoot, '.sct-session.json');
 
 // --- Helper: parse arguments ---
 function parseArgs(args) {
-  const parsed = { goal: '', tags: '', duration: '', help: false, interactive: false, start: false, stop: false };
+  const parsed = { goal: '', tags: '', duration: '', help: false, interactive: false, start: false, stop: false, summary: false, filter: '' };
   if (args.length === 0) {
     parsed.interactive = true;
     return parsed;
@@ -29,20 +30,43 @@ function parseArgs(args) {
       case '--duration': parsed.duration = args[i + 1] || ''; i++; break;
       case '--start': parsed.start = true; break;
       case '--stop': parsed.stop = true; break;
+      case '--summary': parsed.summary = true; break;
+      case '--filter': parsed.filter = args[i + 1] || ''; i++; break;
       default: break;
     }
   }
   return parsed;
 }
 
+// --- Ensure header exists ---
+function ensureHeader() {
+  if (!fs.existsSync(sessionLogPath)) {
+    const header = `# Session Continuity Tracker Log
+====================================================
+
+`;
+    fs.writeFileSync(sessionLogPath, header);
+  }
+}
+
+// --- Get next session number ---
+function getNextSessionNumber() {
+  if (!fs.existsSync(sessionLogPath)) return 1;
+  const content = fs.readFileSync(sessionLogPath, 'utf-8');
+  const matches = content.match(/Session #(\d+)/g) || [];
+  return matches.length + 1;
+}
+
 // --- Logging function ---
 function appendLog({ goal, tags, duration }) {
+  ensureHeader();
   const now = new Date();
   const timestamp = now.toISOString().replace('T', ' ').split('.')[0];
+  const sessionNumber = getNextSessionNumber();
 
   const entryBlock = `
 ====================================================
-Session Log Entry
+Session #${sessionNumber}
 Date: ${timestamp}
 Duration: ${duration || '?'}
 Goal: ${goal || ''}
@@ -62,7 +86,37 @@ Tags: ${tags || ''}
 `;
 
   fs.appendFileSync(sessionLogPath, entryBlock);
-  console.log('Appended session entry to ', sessionLogPath);
+  console.log(`Appended Session #${sessionNumber} to`, sessionLogPath);
+}
+
+// --- Summary function ---
+function showSummary(filterTag = '') {
+  if (!fs.existsSync(sessionLogPath)) {
+    console.log("No session-log.txt found yet.");
+    return;
+  }
+  const content = fs.readFileSync(sessionLogPath, 'utf-8');
+  const entries = content.split("====================================================")
+    .map(e => e.trim())
+    .filter(e => e.includes("Date:"));
+
+  console.log("\n=== Session Summary ===");
+  let count = 0;
+  entries.forEach((entry, idx) => {
+    const date = (entry.match(/Date:\s(.+)/) || [])[1] || "?";
+    const goal = (entry.match(/Goal:\s(.+)/) || [])[1] || "";
+    const duration = (entry.match(/Duration:\s(.+)/) || [])[1] || "?";
+    const tags = (entry.match(/Tags:\s(.+)/) || [])[1] || "";
+
+    if (!filterTag || tags.includes(filterTag)) {
+      count++;
+      console.log(`[${idx + 1}] ${date} | Goal: ${goal} | Duration: ${duration} | Tags: ${tags}`);
+    }
+  });
+  if (count === 0) {
+    console.log(`No sessions found with tag: ${filterTag}`);
+  }
+  console.log("========================\n");
 }
 
 // --- Main ---
@@ -79,17 +133,14 @@ Usage:
   node cli/track-session.js [options]
 
 Options:
-  --goal "text"       Define the session's purpose
+  --goal "text"       Define the session’s purpose
   --tags "a;b;c"      Add semicolon-separated tags
-  --duration "Xm"     Record duration manually (e.g., 15m)
+  --duration "Xm"     Record duration manually (e.g., 15m, 1h)
   --start             Begin a session (records timestamp)
   --stop              End a session (calculates elapsed time)
+  --summary           Show a summary of all sessions
+  --filter "tag"      Show only sessions with a specific tag
   --help              Show this help message
-
-Examples:
-  node cli/track-session.js --goal "Refactor CLI" --tags "cli;prototype" --duration "30m"
-  node cli/track-session.js --start
-  node cli/track-session.js --stop --goal "Finish CLI polish" --tags "cli"
 `);
   process.exit(0);
 }
@@ -119,10 +170,16 @@ if (options.stop) {
   process.exit(0);
 }
 
+// --- Summary / Filter logic ---
+if (options.summary || options.filter) {
+  showSummary(options.filter);
+  process.exit(0);
+}
+
 // --- Interactive fallback ---
 if (options.interactive) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  rl.question("What's your goal for this session? ", (goal) => {
+  rl.question("What’s your goal for this session? ", (goal) => {
     rl.question("Tags (semicolon-separated)? ", (tags) => {
       rl.question("Duration (e.g., 30m)? ", (duration) => {
         appendLog({ goal, tags, duration });
