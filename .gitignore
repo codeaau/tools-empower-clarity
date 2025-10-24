@@ -1,0 +1,39 @@
+# Node.js / CLI related
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets (if ever added)
+.env
+*.env.local
+
+# Backup / archive files
+*.bak
+*.old
+*.orig
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.iml
+
+# OS-specific
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Project-specific
+session-log.txt
+refactor-history.txt
+collab-hooks.txt
