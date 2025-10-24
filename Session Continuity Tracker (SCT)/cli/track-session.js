@@ -40,7 +40,6 @@ function parseArgs(args) {
       case '--action': parsed.action = args[i + 1] || ''; i++; break;
       case '--decision': parsed.decision = args[i + 1] || ''; i++; break;
       case '--duration': parsed.duration = args[i + 1] || ''; i++; break;
-      case '--edit': parsed.edit = parseInt(args[i + 1], 10) || 0; i++; break;
       case '--filter': parsed.filter = args[i + 1] || ''; i++; break;
       case '--goal': parsed.goal = args[i + 1] || ''; i++; break;
       case '--help': parsed.help = true; break;
@@ -214,7 +213,6 @@ Options:
   --stop              End a session (calculates elapsed time)
   --summary           Show a summary of all sessions
   --filter "tag"      Show only sessions with a specific tag
-  --edit <number>     Edit Actions/Decisions/Next Steps of a session
   --action "a,b,c"    Add actions for this entry (comma-separated)
   --decision "x,y"    Add decisions for this entry (comma-separated)
   --next "n,m"        Add next steps for this entry (comma-separated)
@@ -259,11 +257,6 @@ if (options.stop) {
 
 if (options.summary || options.filter) {
   showSummary(options.filter);
-  process.exit(0);
-}
-
-if (options.edit) {
-  editSession(options.edit);
   process.exit(0);
 }
 
