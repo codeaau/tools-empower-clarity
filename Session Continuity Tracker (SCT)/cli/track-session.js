@@ -1,42 +1,68 @@
 #!/usr/bin/env node
 // track-session.js
-// Minimal Node.js CLI to append a session entry to session-log.txt
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import readline from 'readline';
 
-// Recreate __dirname in ESM (since __dirname is not defined by default)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const projectRoot = path.resolve(__dirname, '..');
+const sessionLogPath = path.join(projectRoot, 'session-log.txt');
+const stateFile = path.join(projectRoot, '.sct-session.json');
+
 // --- Helper: parse arguments ---
 function parseArgs(args) {
-  const parsed = { goal: '', tags: '', duration: '', help: false };
+  const parsed = { goal: '', tags: '', duration: '', help: false, interactive: false, start: false, stop: false };
+  if (args.length === 0) {
+    parsed.interactive = true;
+    return parsed;
+  }
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     switch (arg) {
-      case '--help':
-        parsed.help = true;
-        break;
-      case '--goal':
-        parsed.goal = args[i + 1] || '';
-        i++;
-        break;
-      case '--tags':
-        parsed.tags = args[i + 1] || '';
-        i++;
-        break;
-      case '--duration':
-        parsed.duration = args[i + 1] || '';
-        i++;
-        break;
-      default:
-        // ignore unknown args for now
-        break;
+      case '--help': parsed.help = true; break;
+      case '--goal': parsed.goal = args[i + 1] || ''; i++; break;
+      case '--tags': parsed.tags = args[i + 1] || ''; i++; break;
+      case '--duration': parsed.duration = args[i + 1] || ''; i++; break;
+      case '--start': parsed.start = true; break;
+      case '--stop': parsed.stop = true; break;
+      default: break;
     }
   }
   return parsed;
+}
+
+// --- Logging function ---
+function appendLog({ goal, tags, duration }) {
+  const now = new Date();
+  const timestamp = now.toISOString().replace('T', ' ').split('.')[0];
+
+  const entryBlock = `
+====================================================
+Session Log Entry
+Date: ${timestamp}
+Duration: ${duration || '?'}
+Goal: ${goal || ''}
+
+Actions:
+- 
+
+Decisions:
+- 
+
+Next Steps:
+- 
+
+Tags: ${tags || ''}
+====================================================
+
+`;
+
+  fs.appendFileSync(sessionLogPath, entryBlock);
+  console.log('Appended session entry to ', sessionLogPath);
 }
 
 // --- Main ---
@@ -55,52 +81,55 @@ Usage:
 Options:
   --goal "text"       Define the session's purpose
   --tags "a;b;c"      Add semicolon-separated tags
-  --duration "Xm"     Record duration manually (e.g., 15m, 1h)
+  --duration "Xm"     Record duration manually (e.g., 15m)
+  --start             Begin a session (records timestamp)
+  --stop              End a session (calculates elapsed time)
   --help              Show this help message
 
-Example:
+Examples:
   node cli/track-session.js --goal "Refactor CLI" --tags "cli;prototype" --duration "30m"
-
-Description:
-  SCT helps you capture session continuity by logging goals,
-  actions, decisions, and next steps into a plain-text file.
-  Minimal, portable, and clarity-first by design.
+  node cli/track-session.js --start
+  node cli/track-session.js --stop --goal "Finish CLI polish" --tags "cli"
 `);
   process.exit(0);
 }
 
-const now = new Date();
-const timestamp = now.toISOString().replace('T', ' ').split('.')[0];
+// --- Start/Stop logic ---
+if (options.start) {
+  const startData = { startTime: Date.now() };
+  fs.writeFileSync(stateFile, JSON.stringify(startData));
+  console.log("Session started at", new Date(startData.startTime).toLocaleString());
+  process.exit(0);
+}
 
-// Assume this script lives in cli/, so project root is one level up
-const projectRoot = path.resolve(__dirname, '..');
-const sessionLogPath = path.join(projectRoot, 'session-log.txt');
-
-const entryBlock = `
-====================================================
-Session Log Entry
-Date: ${timestamp}
-Duration: ${options.duration || '?'}
-Goal: ${options.goal || ''}
-
-Actions:
-- 
-
-Decisions:
-- 
-
-Next Steps:
-- 
-
-Tags: ${options.tags || ''}
-====================================================
-
-`;
-
-fs.appendFile(sessionLogPath, entryBlock, (err) => {
-  if (err) {
-    console.error('Failed to append to session-log.txt:', err.message);
+if (options.stop) {
+  if (!fs.existsSync(stateFile)) {
+    console.error("No active session found. Run with --start first.");
     process.exit(1);
   }
-  console.log('Appended session entry to', sessionLogPath);
-});
+  const { startTime } = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+  const endTime = Date.now();
+  const durationMs = endTime - startTime;
+  const minutes = Math.round(durationMs / 60000);
+  const duration = `${minutes}m`;
+
+  appendLog({ goal: options.goal, tags: options.tags, duration });
+  fs.unlinkSync(stateFile);
+  console.log("Session stopped. Duration:", duration);
+  process.exit(0);
+}
+
+// --- Interactive fallback ---
+if (options.interactive) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  rl.question("What's your goal for this session? ", (goal) => {
+    rl.question("Tags (semicolon-separated)? ", (tags) => {
+      rl.question("Duration (e.g., 30m)? ", (duration) => {
+        appendLog({ goal, tags, duration });
+        rl.close();
+      });
+    });
+  });
+} else {
+  appendLog(options);
+}
