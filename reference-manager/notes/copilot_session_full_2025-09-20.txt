@@ -1,0 +1,105 @@
+Copilot session notes — 2025-09-20
+
+Summary / Recap
+----------------
+You were working on getting VS Code C/C++ IntelliSense to resolve `#include <Python.h>` used by a third-party header `greenlet.h` inside your project's virtualenv.
+
+Key actions and reasoning
+-------------------------
+- The `greenlet.h` header uses CPython C API types/macros (PyObject_HEAD, PyTypeObject, PyCapsule_Import). These require `Python.h` to be on the include path.
+- On Windows, the Python C API header `Python.h` is typically located in the Python installation's `Include` directory, or in a virtual environment's `Include` directory (for venvs created with the system Python).
+- The C/C++ extension's `c_cpp_properties.json` `includePath` and `browse.path` must contain the folder(s) that hold `Python.h` so IntelliSense can find the header and recognize CPython symbols.
+
+Commands to discover your venv include folder (run in PowerShell inside the workspace)
+-----------------------------------------------------------------------------------
+# Print the include folder used by the venv's Python
+& .\.venv\Scripts\python.exe -c "import sysconfig; print(sysconfig.get_paths()['include'])"
+
+(Example output might be: C:\Users\User\Desktop\...\reference-manager\.venv\Include)
+
+Recommended edits to `.vscode/c_cpp_properties.json`
+---------------------------------------------------
+Add the venv include and the site include to the `includePath` and `browse.path` arrays. Use workspace variables for portability.
+
+Example snippet to add (insert in the active configuration):
+
+"includePath": [
+  "${workspaceFolder}/.venv/Include",
+  "${workspaceFolder}/.venv/Include/site/python3.13",
+  "${workspaceFolder}/src",
+  "${workspaceFolder}/**"
+],
+
+"browse": {
+  "path": [
+    "${workspaceFolder}/.venv/Include",
+    "${workspaceFolder}/.venv/Include/site/python3.13",
+    "${workspaceFolder}/src",
+    "${workspaceFolder}/**"
+  ],
+  "limitSymbolsToIncludedHeaders": true,
+  "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+}
+
+Notes on why not to add `./.venv/Scripts/python.exe` to includes
+------------------------------------------------------------------
+- `python.exe` is the binary interpreter — include directives need directories that contain header files (the `Include` directory), not the executable.
+
+How to refresh IntelliSense (after editing)
+-------------------------------------------
+- Command Palette -> "C/C++: Reset IntelliSense Database"
+- Or Command Palette -> "Developer: Reload Window"
+
+Optional PowerShell commands for directly removing the old browse DB files (if needed)
+------------------------------------------------------------------------------------
+Remove-Item -LiteralPath "$PWD\\.vscode\\BROWSE.VC.DB" -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath "$PWD\\.vscode\\BROWSE.VC.DB-shm" -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath "$PWD\\.vscode\\.vscode\\BROWSE.VC.DB-wal" -ErrorAction SilentlyContinue
+Write-Output 'Browse DB files removed (if they existed). Now reload VS Code or reset IntelliSense.'
+
+Troubleshooting checklist
+-------------------------
+- If `#include <Python.h>` is still unresolved after adding the include paths and resetting IntelliSense:
+  - Run the Python command above to confirm the exact `Include` path and add it explicitly.
+  - Confirm the include path you added actually contains `Python.h`.
+  - Close and re-open VS Code if the extension seems to have a lock or cache problem.
+  - If compiling, ensure your build (MSVC, etc.) is configured to use the same include and lib folders for compilation and linking.
+
+Copy-safe JSON snippet (complete minimal config)
+------------------------------------------------
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/.venv/Include",
+        "${workspaceFolder}/.venv/Include/site/python3.13",
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/**"
+      ],
+      "defines": ["DEBUG","UNICODE","_UNICODE"],
+      "compilerPath": "cl.exe",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64",
+      "browse": {
+        "path": [
+          "${workspaceFolder}/.venv/Include",
+          "${workspaceFolder}/.venv/Include/site/python3.13",
+          "${workspaceFolder}/src",
+          "${workspaceFolder}/**"
+        ],
+        "limitSymbolsToIncludedHeaders": true,
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+      }
+    }
+  ],
+  "version": 4
+}
+
+Final notes & next steps
+------------------------
+- If you want me to apply these edits, I can do so. You preferred manual edits earlier; if you'd now like me to write the file I will.
+- If problems persist, capture the exact IntelliSense or compiler error text and paste it into a message so I can diagnose the next steps.
+
+--- End of notes

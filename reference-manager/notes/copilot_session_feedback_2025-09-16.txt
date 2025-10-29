@@ -1,0 +1,23 @@
+Session recap (2025-09-16)
+
+What we did today:
+- Inspected and discussed `./.venv/Include/site/python3.13/greenlet/greenlet.h`.
+- Diagnosed missing CPython symbols and recommended adding `#include <Python.h>` (this change was made briefly and then you reverted it; apply it again only if you want).
+- Walked through how to make VS Code C/C++ IntelliSense resolve `Python.h` by adding your venv include paths to `.vscode/c_cpp_properties.json`.
+- Guided you to reset the C/C++ IntelliSense DB (Command Palette → "C/C++: Reset IntelliSense Database") to re-index headers.
+
+Recommended next steps (pick one or more):
+- If `greenlet.h` still reports missing symbols, re-add `#include <Python.h>` in `./.venv/Include/site/python3.13/greenlet/greenlet.h`.
+- Add these (or the exact include path printed by `& .\.venv\Scripts\python.exe -c "import sysconfig; print(sysconfig.get_paths()['include'])"`) to `.vscode/c_cpp_properties.json`:
+  - `${workspaceFolder}/.venv/Include`
+  - `${workspaceFolder}/.venv/Include/site/python3.13`
+- Reset IntelliSense (Command Palette → "C/C++: Reset IntelliSense Database") and verify the Problems panel or hover diagnostics.
+- If IntelliSense or a compiler still errors, paste the exact error text and I will diagnose further.
+
+Notes for next session:
+- If you want me to apply any changes, tell me and I will make them. Otherwise I will leave edits to you.
+- If you prefer, I can run a broader scan for other headers that may be missing `Python.h` or prepare a minimal compile test with MSVC to verify headers and linking.
+
+If you'd like this saved somewhere else, or formatted differently, tell me the target path and I will move or reformat it.
+
+End of session. See you next time.

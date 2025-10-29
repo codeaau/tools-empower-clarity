@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session v1.0",
+  "type": "object",
+  "required": ["schema_version", "intention", "factual", "resulting", "meta", "edits"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+
+    "intention": {
+      "type": "object",
+      "required": ["goal", "tags"],
+      "properties": {
+        "duration_minutes": { "type": ["integer", "null"], "minimum": 0 },
+        "goal": { "type": "string", "minLength": 1 },
+        "tags": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              {
+                "type": "object",
+                "required": ["id", "label"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^[A-Z]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+                  "label": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "workspace": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "factual": {
+      "type": "object",
+      "required": ["id", "created_at", "started_at"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "ended_at": { "type": ["string", "null"], "format": "date-time" },
+        "id": { "type": "string", "pattern": "^[S]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+        "started_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "resulting": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "status": { "type": "string", "enum": ["open", "done", "blocked"] },
+              "due_at": { "type": ["string", "null"], "format": "date-time" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[D]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "rationale": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "next_steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[N]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "priority": { "type": "string", "enum": ["low", "medium", "high"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["created_by", "format", "integrity_hash"],
+      "properties": {
+        "created_by": {
+          "type": "object",
+          "required": ["id", "alias"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[W]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+            "alias": { "type": "string" },
+            "identity": { "type": ["object", "null"] },
+            "contact": { "type": ["object", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "edited_at": { "type": ["string", "null"], "format": "date-time" },
+        "format": { "type": "string" },
+        "integrity_hash": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "edits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "who", "when", "why", "intention", "what"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[E]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+          "who": {
+            "type": "object",
+            "required": ["id", "alias"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[W]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "alias": { "type": "string" },
+              "identity": { "type": ["object", "null"] },
+              "contact": { "type": ["object", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "when": {
+            "type": "object",
+            "required": ["started_at", "ended_at"],
+            "properties": {
+              "started_at": { "type": "string", "format": "date-time" },
+              "ended_at": { "type": "string", "format": "date-time" }
+            },
+            "additionalProperties": false
+          },
+          "why": { "type": "string", "minLength": 1 },
+          "intention": { "type": "string", "minLength": 1 },
+          "what": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field", "from", "to"],
+              "properties": {
+                "field": { "type": "string" },
+                "from": {},
+                "to": {},
+                "target_id": { "type": ["string", "null"] }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
