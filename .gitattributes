@@ -1,4 +1,15 @@
-* text=auto
+# enforce LF in the repository for these text files
+* text=auto eol=lf
+
+# force LF for common code file types
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
 *.py text eol=lf
 *.sh text eol=lf
 *.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
