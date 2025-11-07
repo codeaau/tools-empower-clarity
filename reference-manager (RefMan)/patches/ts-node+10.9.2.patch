@@ -1,0 +1,25 @@
+diff --git a/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js b/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js
+index 2fbd832..9128629 100644
+--- a/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js
++++ b/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js
+@@ -39,8 +39,10 @@ const { NativeModule } = require('./node-nativemodule');
+ const {
+   realpathSync,
+   statSync,
+-  Stats,
++  // Stats,             removed because triggers DEP0180 deprecation
++  //                    replaced by 'StatsShim' below
+ } = require('fs');
++const { StatsShim } = require('../src/utils/fsStats-shim');
+ // const { getOptionValue } = require('internal/options');
+ const { getOptionValue } = require('./node-options');
+ // // Do not eagerly grab .manifest, it may be in TDZ
+@@ -143,7 +145,7 @@ const packageJSONCache = new SafeMap();  /* string -> PackageConfig */
+ const statSupportsThrowIfNoEntry = versionGteLt(process.versions.node, '15.3.0') ||
+   versionGteLt(process.versions.node, '14.17.0', '15.0.0');
+ const tryStatSync = statSupportsThrowIfNoEntry ? tryStatSyncWithoutErrors : tryStatSyncWithErrors;
+-const statsIfNotFound = new Stats();
++const statsIfNotFound = new StatsShim();
+ function tryStatSyncWithoutErrors(path) {
+   const stats = statSync(path, { throwIfNoEntry: false });
+   if(stats != null) return stats;

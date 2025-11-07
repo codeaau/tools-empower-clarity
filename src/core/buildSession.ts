@@ -6,19 +6,19 @@ export interface Intention {
 }
 
 export interface Factual {
-    started_at: string; // UTC ISO string
-    ended_at?: string; // UTC ISO string
+    started_at: string;     // UTC ISO string, new Date()?
+    ended_at?: string;      // UTC ISO string, new Date()?
 }
 
 export interface Resulting {
-    outcome?: string;
+    outcome?: string;       // files/folders created and/or affected, semi-colon delimited
     notes?: string;
 }
 
 export interface Meta {
     session_id: string;
     created_at: string;
-    created_by: string; // alias   
+    created_by: string;     // alias   
 }
 
 export interface Edit {

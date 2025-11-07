@@ -1,0 +1,54 @@
+{
+  "name": "sct",
+  "version": "0.1.0",
+  "description": "Session Continuity Tracker (SCT) — accountability through tokens, sessions, and audit trails.",
+  "author": "Azim",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "sct": "dist/cli/track-session.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --loader ts-node/esm ./cli/track-session.ts",
+    "start": "node ./dist/cli/track-session.js",
+    "clean": "rimraf dist",
+    "lint": "eslint . --ext .ts",
+    "test": "vitest",
+    "test:match": "vitest --match",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.24",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.56.0",
+    "rimraf": "^4.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "clarity",
+    "sct",
+    "sessions",
+    "accountability",
+    "cli",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codeaau/clarity-sct.git"
+  },
+  "files": [
+    "dist",
+    "cli"
+  ]
+}
