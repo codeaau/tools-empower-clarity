@@ -1,0 +1,16 @@
+{
+  "patchName": "demo-patch",
+  "author": "Azim",
+  "status": "draft",
+  "added": null,
+  "updated": null,
+  "notes": "Global TZ test",
+  "timestamp": "11/8/2025, 2:18:58 PM EST",
+  "timeZone": {
+    "abbreviation": "EST",
+    "name": "America/New_York",
+    "continent": "Unknown",
+    "country": "United States of America",
+    "city": "New_York"
+  }
+}
