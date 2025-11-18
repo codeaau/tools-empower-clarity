@@ -1,15 +1,6 @@
-// aau/utils/resolveTimeZone.ts
+// trueData/utils/resolveTimeZone.ts
 import * as ct from "countries-and-timezones";
-
-const continentMap: Record<string, string> = {
-  AF: "Africa",
-  AN: "Antarctica",
-  AS: "Asia",
-  EU: "Europe",
-  NA: "North America",
-  SA: "South America",
-  OC: "Oceania",
-};
+import { countryToContinent } from "./countryToContinent";
 
 export interface ResolvedLocation {
   tzName: string;
@@ -22,12 +13,10 @@ export interface ResolvedLocation {
 
 /**
  * Resolve IANA zone name to a narratable location snapshot.
- * Defensive about typings and runtime shape of countries-and-timezones.
  */
 export function resolveTimeZone(tzName: string): ResolvedLocation {
   const tzInfo = ct.getTimezone(tzName);
 
-  // Prefer array of country codes if present, else fall back to single code
   const countryCode =
     tzInfo && Array.isArray((tzInfo as any).countries) && (tzInfo as any).countries.length > 0
       ? (tzInfo as any).countries[0]
@@ -35,16 +24,19 @@ export function resolveTimeZone(tzName: string): ResolvedLocation {
 
   const countryInfo = countryCode ? ct.getCountry(countryCode) : null;
 
-  const continentCode =
-    countryInfo && typeof (countryInfo as any).continent === "string"
-      ? (countryInfo as any).continent
-      : "UNK";
+  // Use canonical mapping if library doesn't provide continent
+  const continent =
+    countryCode && countryToContinent[countryCode]
+      ? countryToContinent[countryCode]
+      : // fallback to library continent if present (normalize)
+      (countryInfo && typeof (countryInfo as any).continent === "string"
+        ? String((countryInfo as any).continent).toUpperCase()
+        : "Unknown");
 
-  const continent = continentMap[continentCode] ?? "Unknown";
   const country =
     countryInfo && typeof (countryInfo as any).name === "string"
       ? (countryInfo as any).name
-      : "Unknown";
+      : countryCode ?? "Unknown";
 
   const parts = tzName.split("/");
   const city = parts[1] ?? "Unknown";

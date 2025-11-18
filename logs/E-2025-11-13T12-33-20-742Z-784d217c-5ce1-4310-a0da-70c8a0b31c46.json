@@ -1,0 +1,13 @@
+{
+  "id": "E-2025-11-13T12-33-20-742Z-784d217c-5ce1-4310-a0da-70c8a0b31c46",
+  "type": "event",
+  "creation": "2025-11-13T12:33:20.742Z",
+  "location": {
+    "tzName": "America/New_York",
+    "abbreviation": "EST",
+    "continent": "Unknown",
+    "country": "United States of America",
+    "city": "New_York",
+    "dateTime": "11/13/2025, 7:33:20 AM"
+  }
+}

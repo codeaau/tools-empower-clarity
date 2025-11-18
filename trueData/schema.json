@@ -1,11 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Event Record Schema",
   "type": "object",
   "properties": {
     "id": { "type": "string" },
-    "type": { "type": "string" },
-    "creation": { "type": "string" },
+    "type": { "enum": ["data", "event", "command", "input", "session"] },
+    "creation": { "type": "string", "format": "date-time" },
     "location": {
       "type": "object",
       "properties": {
@@ -16,8 +14,10 @@
         "city": { "type": "string" },
         "dateTime": { "type": "string" }
       },
-      "required": ["tzName", "abbreviation", "continent", "country", "city", "dateTime"]
-    }
+      "required": ["tzName", "continent", "country", "city", "dateTime"]
+    },
+    "provenance": { "enum": ["entered", "inferred", "system-default"] }
   },
-  "required": ["id", "type", "creation", "location"]
+  "required": ["id", "type", "creation", "location", "provenance"],
+  "additionalProperties": false
 }
