@@ -1,25 +1,19 @@
 name: CI
 on: [push, pull_request]
-
 jobs:
-  validate-and-test:
+  build-test-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run schema validator
-        run: node trueData/validator.ts
-
-      - name: Run tests (Vitest)
-        run: npm test
-
-      - name: Run provenance audit
-        run: node trueData/utils/provenanceAudit.ts
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: node ./trueData/validator.ts | tee trueData/logs/schema-validation.log
+      - run: npm test --silent | tee trueData/logs/test-results.log
+      - run: node ./trueData/utils/provenanceAudit.ts | tee trueData/logs/provenance-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: trueData/logs
