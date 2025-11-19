@@ -1,0 +1,121 @@
+CLARITY Project Summary
+Generated: 2025-11-18T04:48:00-05:00
+Session Mode: Think Deeper
+Author: Azim
+Commit: <commit-hash-or-HEAD>
+Root snapshot (top-level)
+- cli
+- commit-patches
+- logs
+- node_modules
+- patches
+- reference-manager (RefMan)
+- Session Continuity Tracker (SCT)
+- src
+- tests
+- trueData
+- .gitattributes
+- .gitignore
+- data_ethics_hiearchy.md
+- MANIFESTO.md
+- NORTH_STAR.txt
+- package-lock.json
+- package.json
+- README.md
+- TAGLINE.txt
+- tsconfig.json
+
+trueData directory snapshot
+- schema.json
+- validator.ts
+- testFile.ts
+- core/
+  - sampleEntries.ts
+- data/
+  - countryToContinent.json
+- interfaces/
+  - ITimezoneResolver.ts
+- logs/ (empty)
+- resolvers/
+  - getTzResolver.ts
+- scripts/
+  - generate-country-to-continent.ts
+- utils/
+  - consentMiddleware.ts
+  - coordinateResolver.ts
+  - countryToContinent.ts
+  - exporters.ts
+  - prompt.ts
+  - provenanceAudit.ts
+  - provenanceModel.ts
+  - resolverFromCoordinates.ts
+  - resolveTimeZone.ts
+  - signature.ts
+
+Recent activity summary
+- Most recent files created/updated in ./trueData (see snapshot above).
+- Exporter script recommended: export-repo-readable.js (produces repo_snapshot.txt).
+- trueData/logs currently empty — run tests and validators to populate logs.
+
+Current status overview
+- Schema present: schema.json
+- Validator present: validator.ts
+- Tests present: testFile.ts
+- Provenance tooling present: provenanceAudit.ts, provenanceModel.ts
+- Session Continuity Tracker present: SCT (verify configuration)
+- Timezone resolver present: ITimezoneResolver.ts, getTzResolver.ts, resolverFromCoordinates.ts, resolveTimeZone.ts
+- Country mapping present: data/countryToContinent.json and generator script
+- Logs: no recent entries in trueData/logs
+- CI: not specified in snapshot (recommend adding CI gates for schema, tests, provenance)
+
+Priority next steps (ordered)
+1. **Create session_summary.txt** in repo root with this content and commit it. **Owner:** Azim. **Priority:** High. **ETA:** 30–60 minutes.
+2. **Run schema validation** using validator.ts and fix any schema mismatches. Record results in `trueData/logs/schema-validation.log`. **Owner:** Azim. **Priority:** High.
+3. **Execute unit and integration tests** (testFile.ts and repo tests). Save test output to `trueData/logs/test-results.log`. **Owner:** Dev team. **Priority:** High.
+4. **Run provenance audit** (utils/provenanceAudit.ts) across `core/sampleEntries.ts` and other data files; produce `trueData/logs/provenance-report.json`. **Owner:** Data steward. **Priority:** High.
+5. **Run timezone resolver checks** for edge coordinates and DST transitions; record results in `trueData/logs/tz-resolver.log`. **Owner:** Dev team. **Priority:** Medium.
+6. **SCT review**: verify session token entropy, lifetime, renewal rules, and structured logging. Add alerts for anomalies. **Owner:** Security lead. **Priority:** Medium.
+7. **Add CI gates** to fail builds on schema or provenance audit failures. **Owner:** DevOps. **Priority:** High.
+8. **Create issues** for follow-ups: (a) provenance model immutability, (b) consent minimization, (c) exporter integration. **Owner:** Project manager. **Priority:** Medium.
+
+Session plan and immediate actions for this session
+- Step 1 Create session summary file
+  - Action: Paste this block into `session_summary.txt` at repo root and commit with message `session-summary: add initial summary`.
+  - Expected output: `session_summary.txt` committed; commit hash recorded in summary.
+- Step 2 Produce a fresh repo snapshot
+  - Action: Run the exporter (list-only or with contents) to generate `repo_snapshot.txt`.
+  - Expected output: `repo_snapshot.txt` in working directory; attach or copy contents to issue if needed.
+- Step 3 Run schema validator
+  - Action: Execute `validator.ts` (or `npm test` if configured) and capture output to `trueData/logs/schema-validation.log`.
+  - Expected output: pass/fail report and list of offending files/fields.
+- Step 4 Run tests
+  - Action: Run `testFile.ts` and other tests; capture `trueData/logs/test-results.log`.
+  - Expected output: passing tests or failing traces to triage.
+- Step 5 Run provenance audit
+  - Action: Execute `provenanceAudit.ts` to verify each sample entry has origin, actor, timestamp, and content hash.
+  - Expected output: `trueData/logs/provenance-report.json` with audit results and tamper-evidence hashes.
+- Step 6 Update session summary with results
+  - Action: Append test, schema, and provenance results to `session_summary.txt` and commit with message `session-summary: update results`.
+  - Expected output: updated summary and new commit.
+
+Deliverables for this session
+- session_summary.txt (this file)
+- repo_snapshot.txt (exporter output)
+- trueData/logs/schema-validation.log
+- trueData/logs/test-results.log
+- trueData/logs/provenance-report.json
+- trueData/logs/tz-resolver.log (if run)
+
+Notes and constraints
+- Exclude `node_modules` and large binaries from snapshots unless explicitly required.
+- Minimize PII in provenance metadata; use consentMiddleware.ts where user data is involved.
+- Make provenance tamper-evident: include SHA256 content hashes and record transformation steps.
+- Add CI gates to enforce schema and provenance checks before merging.
+
+Next session objectives
+- Triage any schema or test failures and produce fixes.
+- Harden provenance model and make audit outputs queryable.
+- Implement SCT monitoring and alerts.
+- Finalize timezone resolver edge-case handling and add tests for DST transitions.
+
+End of summary
