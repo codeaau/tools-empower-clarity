@@ -5,14 +5,14 @@
  * Produces a single text snapshot that mirrors repo structure and file contents.
  * Usage examples:
  *   node export-repo-readable.js --out repo_snapshot.txt --contents
- *   node export-repo-readable.js --out repo_snapshot.txt --contents --max-bytes 200000
+ *   node export-repo-readable.js --out repo_snapshot.txt --contents --max-bytes 200,000
  */
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import fs, { createReadStream, createWriteStream } from 'fs';
+import { join, relative, extname } from 'path';
+import { createHash } from 'crypto';
 const {promises: fsp} = fs;
-const child = require('child_process');
+import { execSync } from 'child_process';
 
 const ARGV = process.argv.slice(2);
 const getArg = (name, def) => {
@@ -40,8 +40,8 @@ function extToLang(ext) {
 
 async function tryGitInfo() {
   try {
-    const branch = child.execSync('git rev-parse --abbrev-ref HEAD', {cwd: ROOT, stdio: ['pipe','pipe','ignore']}).toString().trim();
-    const commit = child.execSync('git rev-parse --short HEAD', {cwd: ROOT, stdio: ['pipe','pipe','ignore']}).toString().trim();
+    const branch = execSync('git rev-parse --abbrev-ref HEAD', {cwd: ROOT, stdio: ['pipe','pipe','ignore']}).toString().trim();
+    const commit = execSync('git rev-parse --short HEAD', {cwd: ROOT, stdio: ['pipe','pipe','ignore']}).toString().trim();
     return {branch, commit};
   } catch (e) {
     return null;
@@ -64,8 +64,8 @@ async function isBinary(filePath) {
 
 function sha256Stream(filePath) {
   return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256');
-    const rs = fs.createReadStream(filePath);
+    const hash = createHash('sha256');
+    const rs = createReadStream(filePath);
     rs.on('data', d => hash.update(d));
     rs.on('end', () => resolve(hash.digest('hex')));
     rs.on('error', reject);
@@ -102,8 +102,8 @@ async function walk(dir, out, depth = 0) {
   for (const e of entries) {
     if (!SHOW_HIDDEN && e.name.startsWith('.')) continue;
     if (EXCLUDE_LIST.includes(e.name)) continue;
-    const full = path.join(dir, e.name);
-    const rel = path.relative(ROOT, full) || '.';
+    const full = join(dir, e.name);
+    const rel = relative(ROOT, full) || '.';
     if (e.isDirectory()) {
       out.write(`${'  '.repeat(depth)}DIR: ${rel}\n`);
       await walk(full, out, depth + 1);
@@ -134,7 +134,7 @@ async function walk(dir, out, depth = 0) {
         }
 
         if (size <= MAX_BYTES) {
-          const ext = path.extname(e.name);
+          const ext = extname(e.name);
           const lang = extToLang(ext);
           out.write(`${'  '.repeat(depth)}  Content start\n`);
           if (lang) out.write(`\`\`\`${lang}\n`);
@@ -147,7 +147,7 @@ async function walk(dir, out, depth = 0) {
           const head = await readChunk(full, 0, PREVIEW_CHUNK);
           const tailStart = Math.max(0, size - PREVIEW_CHUNK);
           const tail = await readChunk(full, tailStart, PREVIEW_CHUNK);
-          const ext = path.extname(e.name);
+          const ext = extname(e.name);
           const lang = extToLang(ext);
           if (lang) out.write(`\`\`\`${lang}\n`);
           out.write(head.replace(/\r\n/g, '\n'));
@@ -164,7 +164,7 @@ async function walk(dir, out, depth = 0) {
 }
 
 (async function main() {
-  const outStream = fs.createWriteStream(OUT_FILE, {flags: 'w'});
+  const outStream = createWriteStream(OUT_FILE, {flags: 'w'});
   try {
     await writeManifest(outStream);
     await walk(ROOT, outStream, 0);

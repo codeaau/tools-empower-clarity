@@ -1,15 +1,20 @@
 #!/usr/bin/env ts-node
 
-import { Command, OptionValues } from "commander";
-import { createPatch } from "../src/patches/patch-utils";
+import { Command } from "commander";
+import type { OptionValues } from "commander";
+import { createPatch } from "../src/patches/patch-utils.ts";
+import { run as validate } from "../trueData/validator.ts";   // <-- add this import
+import { run as audit } from "../trueData/utils/provenanceAudit.ts";
 
 const program = new Command();
 
 program
   .name("sct")
   .description("SCT CLI for session and patch management")
-  .version("0.1.0");
+  .version("0.1.0")
+  .option("--verbose", "Enable verbose output globally");
 
+// --- PATCH COMMAND ---
 const patch = program
   .command("patch")
   .description("Manage patches in SCT/CLARITY");
@@ -35,6 +40,51 @@ patch
       console.log(`Patch '${patchName}' created successfully.`);
     } catch (err) {
       console.error("Error creating patch:", err);
+      process.exit(1);
+    }
+  });
+
+// --- VALIDATE COMMAND ---
+program
+  .command("validate")
+  .description("Run schema validation for trueData")
+  .option("--json", "Output JSON")
+  .option("--log-dir <dir>", "Log directory", "trueData/logs")
+  .option("--root <path>", "Repo root", ".")
+  .action(async (options: OptionValues) => {
+    const globalOpts = program.opts();
+    try {
+      await validate({
+        verbose: globalOpts.verbose,
+        json: options.json,
+        logDir: options.logDir,
+        root: options.root,
+      });
+      console.log("Validation completed.");
+    } catch (err) {
+      console.error("Validation failed:", err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("audit")
+  .description("Run provenance audit for trueData")
+  .option("--json", "Output JSON")
+  .option("--log-dir <dir>", "Log directory", "trueData/logs")
+  .option("--root <path>", "Repo root", ".")
+  .action(async (options: OptionValues) => {
+    const globalOpts = program.opts();
+    try {
+      await audit({
+        verbose: globalOpts.verbose,
+        json: options.json,
+        logDir: options.logDir,
+        root: options.root,
+      });
+      console.log("Audit completed.");
+    } catch (err) {
+      console.error("Audit failed:", err);
       process.exit(1);
     }
   });

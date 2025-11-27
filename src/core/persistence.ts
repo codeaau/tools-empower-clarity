@@ -1,15 +1,24 @@
-import fs from "fs";
-import path from "path";
-import { CONFIG } from "./config";
-import { generateId } from "./ids";
+// src/core/persistence.ts
+import fs from 'fs/promises';
+import path from 'path';
+import { CONFIG } from './config';
+import { generateId } from './ids';
 
-export function saveData(data: object, label: string = "entry"): string {
+export async function saveSession(session: Record<string, unknown>): Promise<string> {
   const dir = CONFIG.DATA_PATH;
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  const id = generateId(label);
+  await fs.mkdir(dir, { recursive: true });
+  const id = (session as any).id ?? generateId('session');
   const file = path.join(dir, `${id}.json`);
-
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), { encoding: "utf-8" });
+  await fs.writeFile(file, JSON.stringify(session, null, 2), 'utf-8');
   return id;
+}
+
+export async function loadSession(id: string): Promise<Record<string, unknown> | null> {
+  const file = path.join(CONFIG.DATA_PATH, `${id}.json`);
+  try {
+    const raw = await fs.readFile(file, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }

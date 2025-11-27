@@ -1,0 +1,16 @@
+{
+  "patchName": "test-patch",
+  "author": "aau",
+  "status": "draft",
+  "added": null,
+  "updated": null,
+  "notes": null,
+  "timestamp": "11/27/2025, 9:44:05 AM EST",
+  "timeZone": {
+    "abbreviation": "EST",
+    "name": "America/New_York",
+    "continent": "Unknown",
+    "country": "United States of America",
+    "city": "New_York"
+  }
+}

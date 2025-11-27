@@ -1,15 +1,15 @@
-import fs from "fs";
-import { saveData } from "../core/persistence";
-import { CONFIG } from "../core/config";
-import { test } from "./testRunner";
-import { expect } from "./assert";
+import { describe, it, expect } from 'vitest';
+import { saveSession, loadSession } from '../core/persistence';
+import fs from 'fs/promises';
+import path from 'path';
+import { CONFIG } from '../core/config';
 
-test("Data is saved immutably", () => {
-  const id = saveData({ foo: "bar" }, "TEST");
-  const filePath = `${CONFIG.DATA_PATH}${id}.json`;
-
-  expect(fs.existsSync(filePath)).toBe(true);
-
-  const content = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  expect(content.foo).toBe("bar");
+describe('persistence', () => {
+  it('saves and loads a session', async () => {
+    const session = { id: 'abc123', value: 'x' };
+    const id = await saveSession(session);
+    const loaded = await loadSession(id);
+    expect(loaded).toEqual(session);
+    await fs.rm(path.join(CONFIG.DATA_PATH, `${id}.json`));
+  });
 });

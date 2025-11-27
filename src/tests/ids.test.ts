@@ -1,12 +1,9 @@
-import { generateId } from "../core/ids";
-import { test } from "./testRunner";
-import { expect } from "./assert";
+import { describe, it, expect } from "vitest";
+import { makeId } from '../core/makeId'; // adjust path
 
-test("IDs are unique and prefixed", () => {
-  const id1 = generateId("TEST");
-  const id2 = generateId("TEST");
-  console.log("Generated IDs:", id1, id2);
-
-  expect(id1).not.toBe(id2);
-  expect(id1.startsWith("TEST-")).toBeTruthy();
+describe("Create an identity number", () => {
+  it("generates a string of correct length", () => {
+    const id = makeId();
+    expect(id).toHaveLength(10);
+  });
 });

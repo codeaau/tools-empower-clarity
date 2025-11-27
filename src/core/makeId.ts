@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 
-export function makeId(prefix: string, date: Date = new Date()): string {
+export function makeId(prefix: string = 'U', date: Date = new Date()): string {
   if (!/^[A-Z]$/.test(prefix)) {
     throw new Error("prefix must be a single uppercase letter");
   }

@@ -1,0 +1,46 @@
+Session Continuity Tracker (SCT)/README.md
+Session Continuity Tracker (SCT)/cli/track-session.ts
+Session Continuity Tracker (SCT)/package-lock.json
+Session Continuity Tracker (SCT)/package.json
+Session Continuity Tracker (SCT)/src/auditTrail.ts
+Session Continuity Tracker (SCT)/src/session.ts
+Session Continuity Tracker (SCT)/src/tests/session.test.ts
+Session Continuity Tracker (SCT)/src/token.ts
+Session Continuity Tracker (SCT)/src/utils.ts
+Session Continuity Tracker (SCT)/tsconfig.json
+Session Continuity Tracker (SCT)/vitest.config.ts
+reference-manager (RefMan)/cli/refman.ts
+reference-manager (RefMan)/package-lock.json
+reference-manager (RefMan)/package.json
+reference-manager (RefMan)/patches/ts-node+10.9.2.patch
+reference-manager (RefMan)/refs.jsonl
+reference-manager (RefMan)/src/core/index.ts
+reference-manager (RefMan)/src/core/types.ts
+reference-manager (RefMan)/src/storage/local.ts
+reference-manager (RefMan)/src/utils/fsStats-shim.ts
+reference-manager (RefMan)/src/utils/id.ts
+reference-manager (RefMan)/src/utils/time.ts
+reference-manager (RefMan)/tests/core.test.ts
+reference-manager (RefMan)/tests/projection.test.ts
+reference-manager (RefMan)/tests/storage.test.ts
+reference-manager (RefMan)/tsconfig.json
+reference-manager (RefMan)/vitest.config.ts
+trueData/core/sampleEntries.ts
+trueData/data/countryToContinent.json
+trueData/interfaces/ITimezoneResolver.ts
+trueData/logs/provenance-report.json
+trueData/resolvers/geoTzResolver.ts
+trueData/schema.json
+trueData/scripts/generate-country-to-continent.ts
+trueData/testFile.ts
+trueData/utils/consentMiddleware.ts
+trueData/utils/coordinateResolver.ts
+trueData/utils/countryToContinent.ts
+trueData/utils/exporters.ts
+trueData/utils/prompt.ts
+trueData/utils/provenanceAudit.ts
+trueData/utils/provenanceModel..ts
+trueData/utils/resolveFromCoordinates.ts
+trueData/utils/resolveTimeZone.ts
+trueData/utils/signature.ts
+trueData/validator.ts
