@@ -1,4 +1,4 @@
-import { makeId } from "./makeId";
+import { makeId } from "./makeId.js";
 
 export interface Intention {
     description: string;

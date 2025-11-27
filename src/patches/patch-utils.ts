@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import ct from "countries-and-timezones";
+import * as ct from "countries-and-timezones";
 
 interface PatchOptions {
   patchName: string;

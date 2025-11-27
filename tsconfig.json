@@ -7,13 +7,21 @@
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationDir": "dist/types",
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "include": [
+    "cli",
     "src",
     "trueData/src",
-    "RefMan/src",
-    "SCT/src",
-    "utils"
+    "reference-manager (RefMan)/src",
+    "Session Continuity Tracker (SCT)/src",
+    "utils",
   ]
 }

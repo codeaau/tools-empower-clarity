@@ -1,13 +1,14 @@
-import Ajv, { ErrorObject } from "ajv";
+import AjvModule, { ErrorObject } from "ajv";
 import { createHash } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import { Session } from "./buildSession";
+import { Session } from "./buildSession.js";
 
 // load the canonical schema once at startup
 const schemaPath = path.resolve(__dirname, "../docs/schema.json");
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
 
+const Ajv = (AjvModule as any).default ?? AjvModule;
 const ajv = new Ajv({ allErrors: true, strict: true });
 const validate = ajv.compile(schema);
 

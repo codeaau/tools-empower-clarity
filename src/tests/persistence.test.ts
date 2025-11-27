@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { saveSession, loadSession } from '../core/persistence';
+import { saveSession, loadSession } from '../core/persistence.js';
 import fs from 'fs/promises';
 import path from 'path';
-import { CONFIG } from '../core/config';
+import { CONFIG } from '../core/config.js';
 
 describe('persistence', () => {
   it('saves and loads a session', async () => {

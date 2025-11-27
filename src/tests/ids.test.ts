@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeId } from '../core/makeId'; // adjust path
+import { makeId } from '../core/makeId.js'; // adjust path
 
 describe("Create an identity number", () => {
   it("generates a string of correct length", () => {

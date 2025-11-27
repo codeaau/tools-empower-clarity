@@ -1,8 +1,8 @@
 // src/core/persistence.ts
 import fs from 'fs/promises';
 import path from 'path';
-import { CONFIG } from './config';
-import { generateId } from './ids';
+import { CONFIG } from './config.js';
+import { generateId } from './ids.js';
 
 export async function saveSession(session: Record<string, unknown>): Promise<string> {
   const dir = CONFIG.DATA_PATH;

@@ -1,22 +1,42 @@
 {
+  "name": "tools-empower-clarity",
+  "version": "0.0.0",
+  "private": true,
   "type": "module",
   "engines": {
     "node": ">=24.0.0 <25.0.0"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "jest",
+    "vitest": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "clean": "rimraf dist",
+    "build": "tsc",
+    "prebuild": "npm run clean",
+    "copy:assets": "cpy \"trueData/schema.json\" dist/trueData --flat",
+    "dev": "ts-node --esm cli/clarity.ts",
+    "watch": "tsc -w",
+    "cli": "node dist/cli/clarity.js",
+    "cli:validate": "npm run build && node dist/cli/clarity.js validate",
+    "cli:audit": "npm run build && node dist/cli/clarity.js audit",
+    "cli:patch-create": "npm run build && node dist/cli/clarity.js patch create",
+    "start": "npm run cli",
+    "lint": "eslint \"src/**\" \"trueData/src/**\" \"reference-manager (RefMan)/src/**\" \"Session Continuity Tracker (SCT)/src/**\" --ext .ts",
+    "ci": "npm run build && npm run cli:validate && npm run cli:audit"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/commander": "^2.12.0",
     "@types/node": "^24.9.2",
     "@types/tz-lookup": "^6.1.2",
     "commander": "^14.0.2",
+    "cpy": "^12.1.0",
     "cross-env": "^10.1.0",
     "eslint": "^8.57.1",
     "prettier": "^3.6.2",
+    "rimraf": "^6.1.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.10"
   },
@@ -29,5 +49,11 @@
     "lru-cache": "^11.2.2",
     "tz-lookup": "^6.1.25",
     "uuid": "^13.0.0"
+  },
+    "overrides": {
+    "braces": "^3.0.2",
+    "micromatch": "^4.0.4",
+    "chokidar": "^3.5.3",
+    "readdirp": "^3.6.0"
   }
 }

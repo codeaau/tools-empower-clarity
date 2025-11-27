@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CONFIG } from "./config";
+import { CONFIG } from "./config.js";
 
 export function logEvent(message: string): void {
   const logDir = CONFIG.LOG_PATH;

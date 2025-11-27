@@ -2,9 +2,9 @@
 
 import { Command } from "commander";
 import type { OptionValues } from "commander";
-import { createPatch } from "../src/patches/patch-utils.ts";
-import { run as validate } from "../trueData/validator.ts";   // <-- add this import
-import { run as audit } from "../trueData/utils/provenanceAudit.ts";
+import { createPatch } from "../src/patches/patch-utils.js";
+import { run as validate } from "../trueData/validator.js";   // <-- add this import
+import { run as audit } from "../trueData/utils/provenanceAudit.js";
 
 const program = new Command();
 
