@@ -56,9 +56,13 @@
 
         bash
         node export-repo-readable.js --out repo_snapshot.txt --contents
-        If the file is too large, generate scoped snapshots:
+            
+    If the file is too large, generate scoped snapshots:
 
         bash
         node export-repo-readable.js --dir trueData --out trueData_snapshot.txt --contents
         node export-repo-readable.js --dir src --out src_snapshot.txt --contents
-        Share the scoped snapshots with Copilot for analysis.
+    
+    
+
+You may share the scoped snapshots with your A.I. of preference or colleagues for analysis.
