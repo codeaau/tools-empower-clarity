@@ -163,11 +163,13 @@ async function walk(dir, out, depth = 0) {
   }
 }
 
+const TARGET_DIR = getArg('--dir', null);
+
 (async function main() {
   const outStream = createWriteStream(OUT_FILE, {flags: 'w'});
   try {
     await writeManifest(outStream);
-    await walk(ROOT, outStream, 0);
+    await walk(TARGET_DIR ? TARGET_DIR : ROOT, outStream, 0);
     outStream.end();
     console.log(`Snapshot written to ${OUT_FILE}`);
   } catch (err) {
