@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "enum": ["data", "event", "command", "input", "session"] },
+    "creation": { "type": "string", "format": "date-time" },
+    "location": {
+      "type": "object",
+      "properties": {
+        "tzName": { "type": "string" },
+        "abbreviation": { "type": "string" },
+        "continent": { "type": "string" },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
+        "dateTime": { "type": "string" }
+      },
+      "required": ["tzName", "continent", "country", "city", "dateTime"]
+    },
+    "provenance": { "enum": ["entered", "inferred", "system-default"] }
+  },
+  "required": ["id", "type", "creation", "location", "provenance"],
+  "additionalProperties": false
+}

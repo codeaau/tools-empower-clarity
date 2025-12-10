@@ -1,12 +1,27 @@
 import AjvModule from "ajv";
+import addFormatsModule from "ajv-formats";
 import { createHash } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-// load the canonical schema once at startup
-const schemaPath = path.resolve(__dirname, "../docs/schema.json");
+import { fileURLToPath } from "url";
+// Resolve schema path for both ESM and CommonJS
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Try multiple paths: first from src context, then from dist context
+let schemaPath = path.resolve(__dirname, "../docs/schema.json");
+if (!fs.existsSync(schemaPath)) {
+    // If in dist/src/core, go up to dist, then to root (../..)
+    schemaPath = path.resolve(__dirname, "../../docs/schema.json");
+}
+if (!fs.existsSync(schemaPath)) {
+    // Fallback: resolve relative to cwd
+    schemaPath = path.resolve(process.cwd(), "src/docs/schema.json");
+}
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
 const Ajv = AjvModule.default ?? AjvModule;
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({ allErrors: true, strict: false });
+const addFormats = addFormatsModule.default ?? addFormatsModule;
+addFormats(ajv);
 const validate = ajv.compile(schema);
 /**
  * Compute SHA-256 hash of canonical sections.

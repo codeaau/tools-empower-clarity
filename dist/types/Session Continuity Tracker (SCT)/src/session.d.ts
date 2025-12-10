@@ -1,8 +1,4 @@
-import { TrackingToken } from "./token.js";
-export interface SessionState {
-    token: TrackingToken;
-    startTime: number;
-}
+import type { TrackingToken } from "../types-sct.js";
 export declare function getStateFile(projectRoot: string): string;
 /**
  * Start an in-progress session and persist startTime + token.

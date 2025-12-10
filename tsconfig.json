@@ -14,7 +14,8 @@
     "composite": false,
     "emitDeclarationOnly": false,
     "noEmit": false,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true
   },
   "include": [
     "cli",

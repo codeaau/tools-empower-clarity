@@ -13,7 +13,7 @@
  * NOTE: Use `.js` extensions in the import paths so the TypeScript -> ESM output resolves correctly.
  */
 
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, test } from "vitest";
 
 // Import the module under test. Adjust the import name if validateSession is exported differently.
 import * as validateModule from "../core/validateSession.js";
@@ -29,19 +29,63 @@ const validateSession: (s: any) => any =
  * Adjust fields to match your project's Session shape.
  */
 function makeValidSession() {
+  const now = new Date().toISOString();
   return {
-    id: "sess-001",
-    title: "Test session",
-    createdAt: new Date().toISOString(),
-    startTime: new Date().toISOString(),
-    endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    participants: [
-      { id: "p-1", name: "Alice" },
-      { id: "p-2", name: "Bob" },
-    ],
-    metadata: {
-      source: "unit-test",
+    schema_version: "1.0",
+    intention: {
+      goal: "Test session creation",
+      tags: ["test", "validation"],
+      duration_minutes: 60,
+      workspace: null,
     },
+    factual: {
+      id: "S-20251210T144614Z-394433bd-fad3-48c8-9f2c-abc123def456",
+      created_at: now,
+      started_at: now,
+      ended_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    },
+    resulting: {
+      actions: [],
+      decisions: [],
+      next_steps: [],
+      notes: "Test validation passed",
+    },
+    meta: {
+      created_by: {
+        id: "W-20251210T144614Z-394433bd-fad3-48c8-9f2c-abc123def456",
+        alias: "test-user",
+        identity: null,
+        contact: null,
+      },
+      edited_at: null,
+      format: "v1.0",
+      integrity_hash: "abc123def456",
+    },
+    edits: [
+      {
+        id: "E-20251210T144614Z-394433bd-fad3-48c8-9f2c-abc123def456",
+        who: {
+          id: "W-20251210T144614Z-394433bd-fad3-48c8-9f2c-abc123def456",
+          alias: "test-user",
+          identity: null,
+          contact: null,
+        },
+        when: {
+          started_at: now,
+          ended_at: now,
+        },
+        why: "Initial test",
+        intention: "Test session creation",
+        what: [
+          {
+            field: "intention.goal",
+            from: null,
+            to: "Test session creation",
+            target_id: null,
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -61,9 +105,13 @@ describe("core/validateSession", () => {
 
     // If validateSession returns a boolean or result object, also allow that:
     const result = validateSession(session);
+    console.log("Validation result:", result);
     if (typeof result === "boolean") {
       expect(result).toBe(true);
     } else if (result && typeof result === "object" && "valid" in result) {
+      if (!(result as any).valid) {
+        console.log("Validation errors:", (result as any).errors);
+      }
       expect((result as any).valid).toBe(true);
     }
   });

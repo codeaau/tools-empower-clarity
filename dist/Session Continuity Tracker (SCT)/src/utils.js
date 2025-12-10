@@ -1,7 +1,7 @@
 // src/utils.ts
 import fs from "fs";
 import path from "path";
-export const SESSION_LOG = "session-log.txt";
+const SESSION_LOG = "session-log.txt";
 /**
  * Ensure the human-readable header exists in session-log.txt.
  * Works idempotently.

@@ -1,4 +1,4 @@
-import { Session } from "./buildSession.js";
+import type { Session } from "./buildSession.js";
 export interface ValidationResult {
     valid: boolean;
     errors?: string[];

@@ -1,4 +1,4 @@
-import { TrackingToken } from "./token.js";
+import type { TrackingToken } from "../types-sct.js";
 /**
  * Append a single-line structured audit entry (JSON-ish) plus human readable
  * line for quick inspection. This keeps both machine- and human-friendly traces.
