@@ -1,14 +1,11 @@
 // src/session.ts
 import fs from "fs";
 import path from "path";
-import { createToken, TrackingToken } from "./token.js";
+import { createToken } from "./token.js";
+import type { TrackingToken, SessionState } from "../types-sct.js";
+
 
 const stateFileName = ".sct-session.json";
-
-export interface SessionState {
-  token: TrackingToken;
-  startTime: number;
-}
 
 export function getStateFile(projectRoot: string): string {
   return path.join(projectRoot, stateFileName);

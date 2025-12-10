@@ -1,7 +1,7 @@
 // src/auditTrail.ts
 import fs from "fs";
 import path from "path";
-import { TrackingToken } from "./token.js";
+import type { TrackingToken } from "../types-sct.js";
 
 const defaultLogFile = "session-log.txt";
 

@@ -66,7 +66,10 @@ export class Data {
         rawResolverOutput: { tzName: tz },
         userConfirmed: this.provenance.confirmedByUser,
         timestamp: this.provenance.timestamp,
-      }).catch(() => {});
+      }).catch((err: any, data?: unknown | any | null) => {
+        console.error(`Error appending provenance:\n Error: ${err},\n Data: ${data ? data : "N/A"}`);
+        throw err;
+      });
     }
   }
 

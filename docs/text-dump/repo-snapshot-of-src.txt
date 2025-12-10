@@ -1,0 +1,980 @@
+REPO SNAPSHOT
+Generated: 2025-12-02T16:56:08.782Z
+Root: C:\Users\User\Desktop\Topi Apps\MS Copilot\Programming\projects\tools - empower - clarity
+Git branch: main
+Git commit: 1f333c8
+---
+
+DIR: src\core
+  - FILE: src\core\buildSession.ts
+    Size: 1447 bytes
+    Modified: 2025-11-27T15:43:59.741Z
+    SHA256: 1602da3cd6495b93ca5ee5bcb451628811e1bb21e6341e7a8f285770e79f188e
+    Content start
+```typescript
+import { makeId } from "./makeId.js";
+
+export interface Intention {
+    description: string;
+    duration_minutes?: number;
+}
+
+export interface Factual {
+    started_at: string;     // UTC ISO string, new Date()?
+    ended_at?: string;      // UTC ISO string, new Date()?
+}
+
+export interface Resulting {
+    outcome?: string;       // files/folders created and/or affected, semi-colon delimited
+    notes?: string;
+}
+
+export interface Meta {
+    session_id: string;
+    created_at: string;
+    created_by: string;     // alias   
+}
+
+export interface Edit {
+    who: string;
+    when: string;
+    why: string;
+    intention: string;
+    what: Record<string, unknown>;
+}
+
+export interface Session {
+    intention: Intention;
+    factual: Factual;
+    resulting: Resulting;
+    meta: Meta;
+    edits: Edit[];
+}
+
+/** Builds a new session object with canonical IDs and timestamps */
+export function buildSession(
+    prefix: string,
+    alias: string,
+    intention: Intention,
+    factual: Factual,
+    resulting: Resulting = {}): Session {
+        const sessionId = makeId(prefix);
+        const now = new Date().toISOString();
+        return  {
+            intention,
+            factual,
+            resulting,
+            meta:  {
+                session_id: sessionId,
+                created_at: now,
+                created_by: alias,
+            },
+            edits: [],
+        };
+}
+```
+    Content end
+
+  - FILE: src\core\config.ts
+    Size: 184 bytes
+    Modified: 2025-11-05T18:17:57.416Z
+    SHA256: fc8bcc103fecdd71c2df6b3f7ed7bf5982c517a86d45447d3edd717d961f2225
+    Content start
+```typescript
+export const CONFIG = {
+  APP_NAME: "CLARITY",
+  VERSION: "0.1.0",
+  LOG_PATH: "./data/logs/",
+  DATA_PATH: "./data/store/",
+  IMMUTABLE: true, // enforce append-only writes
+};
+
+```
+    Content end
+
+  - FILE: src\core\ids.ts
+    Size: 264 bytes
+    Modified: 2025-11-05T18:18:38.381Z
+    SHA256: b4fd79b45bf433c4f6cf5c20f44eb01b9b104dca8340b8428befb001680f2b33
+    Content start
+```typescript
+import { randomUUID } from "crypto";
+
+export function generateId(prefix: string = "CLARITY"): string {
+  const timestamp = Date.now().toString(36);
+  const unique = randomUUID().split("-")[0]; // short segment
+  return `${prefix}-${timestamp}-${unique}`;
+}
+
+```
+    Content end
+
+  - FILE: src\core\logger.ts
+    Size: 426 bytes
+    Modified: 2025-11-27T16:16:37.040Z
+    SHA256: 99c557279e4455f8ca467273a89ddc924f09490c1e25914daa9a190f164934c1
+    Content start
+```typescript
+import fs from "fs";
+import path from "path";
+import { CONFIG } from "./config.js";
+
+export function logEvent(message: string): void {
+  const logDir = CONFIG.LOG_PATH;
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+
+  const file = path.join(logDir, "events.log");
+  const entry = `[${new Date().toISOString()}] ${message}\n`;
+
+  fs.appendFileSync(file, entry, { encoding: "utf-8" });
+}
+
+```
+    Content end
+
+  - FILE: src\core\makeId.ts
+    Size: 750 bytes
+    Modified: 2025-11-18T12:50:15.396Z
+    SHA256: 1bf64ba62649b221733006b3aea4acb6bf881b8b7aa29e567f9f481c438e35f3
+    Content start
+```typescript
+import { randomUUID } from "crypto";
+
+export function makeId(prefix: string = 'U', date: Date = new Date()): string {
+  if (!/^[A-Z]$/.test(prefix)) {
+    throw new Error("prefix must be a single uppercase letter");
+  }
+  const ts = utcTimestampForId(date);
+  const uuid = randomUUID();
+  return `${prefix}-${ts}-${uuid}`;
+}
+
+function pad(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
+function utcTimestampForId(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = pad(date.getUTCMonth() + 1);
+  const d = pad(date.getUTCDate());
+  const hh = pad(date.getUTCHours());
+  const mm = pad(date.getUTCMinutes());
+  const ss = pad(date.getUTCSeconds());
+  return `${y}${m}${d}T${hh}${mm}${ss}Z`;
+}
+
+```
+    Content end
+
+  - FILE: src\core\persistence.ts
+    Size: 806 bytes
+    Modified: 2025-11-27T16:21:56.461Z
+    SHA256: eff4b3ddf2518a297ed3cef8a55c0d3ae1a21d4bc9ae18787587ed9c84b0d7d3
+    Content start
+```typescript
+// src/core/persistence.ts
+import fs from 'fs/promises';
+import path from 'path';
+import { CONFIG } from './config.js';
+import { generateId } from './ids.js';
+
+export async function saveSession(session: Record<string, unknown>): Promise<string> {
+  const dir = CONFIG.DATA_PATH;
+  await fs.mkdir(dir, { recursive: true });
+  const id = (session as any).id ?? generateId('session');
+  const file = path.join(dir, `${id}.json`);
+  await fs.writeFile(file, JSON.stringify(session, null, 2), 'utf-8');
+  return id;
+}
+
+export async function loadSession(id: string): Promise<Record<string, unknown> | null> {
+  const file = path.join(CONFIG.DATA_PATH, `${id}.json`);
+  try {
+    const raw = await fs.readFile(file, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+```
+    Content end
+
+  - FILE: src\core\validateSession.ts
+    Size: 2636 bytes
+    Modified: 2025-11-27T16:23:25.086Z
+    SHA256: 18b53aa42fa71338512998361b5b99b949ea80a526624e698d5ae73fd6a715ab
+    Content start
+```typescript
+import AjvModule, { ErrorObject } from "ajv";
+import { createHash } from "crypto";
+import * as fs from "fs";
+import * as path from "path";
+import { Session } from "./buildSession.js";
+
+// load the canonical schema once at startup
+const schemaPath = path.resolve(__dirname, "../docs/schema.json");
+const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+
+const Ajv = (AjvModule as any).default ?? AjvModule;
+const ajv = new Ajv({ allErrors: true, strict: true });
+const validate = ajv.compile(schema);
+
+export interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+    integrity_hash?: string;
+}
+
+/**
+ * Ajv error type specialized for our use.
+ */
+type AjvError = ErrorObject<string, Record<string, unknown>>;
+
+/**
+ * Compute SHA-256 hash of canonical sections.
+ * Only intention, factual, resulting, meta are included (not edits).
+ */
+function computeIntegrityHash(session: Session): string {
+    const canonical = {
+        intention: session.intention, 
+        factual: session.factual, 
+        resulting: session.resulting, 
+        meta: session.meta,
+    };
+    const json = JSON.stringify(canonical);
+    return createHash("sha256").update(json).digest("hex");
+}
+
+/**
+ * Validate a session object agaionst schema and semantic rules.
+ */
+export function validateSession(session: Session): ValidationResult {
+    const valid = validate(session);
+    
+    if (!valid) {
+        const errors: string[] | undefined = validate.errors?.map((e: AjvError) => `schema${e.instancePath} ${e.message}`);
+        return { valid: false, errors };
+    }
+
+    if (session.factual.ended_at && session.factual.started_at) {
+        const start = new Date(session.factual.started_at).getTime();
+        const end = new Date(session.factual.ended_at).getTime();
+        if (end < start) {
+            return {
+                valid: false,
+                errors: ["semantic: factual.ended_at must be >= factual.started_at"],
+            };
+        }
+    }
+
+    // Append-only edits check 
+    // (basic enforcement: no overwrite detection here,
+    // but ensures edits[] is an array of objects with required fields)
+    for (const [i, edit] of session.edits.entries()) {
+        if (!edit.who || !edit.when || !edit.why || !edit.intention || !edit.what) {
+            return {
+                valid: false,
+                errors: [`edits[${i}] is missing required fields`],
+            };
+        }
+    }
+    
+    // Compute integrity hash
+    const integrity_hash = computeIntegrityHash(session);
+    return { valid: true, integrity_hash };
+}
+```
+    Content end
+
+DIR: src\docs
+  DIR: src\docs\patches
+    - FILE: src\docs\patches\2025-11-7-fsStats-shim.md
+      Size: 2189 bytes
+      Modified: 2025-11-07T19:01:36.600Z
+      SHA256: cb522c1e3f5315e73c0026e64259a27f06d2598df74725305416732bfcc2693d
+      Content start
+```markdown
+# TL;DR ---------------------------------------------------------------------------
+chore(patches): add fsStats-shim patch record
+
+- Introduced './reference-manager/src/core/utils/fsStats-shim.ts' to replace deprecated fs' `new Stats()` usage.
+- Updated node-internal-modules-esm-resolve.js to require shim instead of fs.Stats.
+- Added documentation artifacts under src/docs/patches/:
+  - 2025-11-07-fsStats-shim.txt (plain summary)
+  - 2025-11-07-fsStats-shim.md (detailed rationale + diff)
+  - 2025-11-07-fsStats-shim.json (metadata record)
+- Verified build and tests pass; DEP0180 warnings eliminated.
+# ---------------------------------------------------------------------------------
+
+## Patch Documentation: fsStats-shim Integration
+
+### Context
+Node.js deprecated direct construction of `fs.Stats` objects (DEP0180).  
+The `ts-node` package includes a copy of Node’s internal ESM resolver (`node-internal-modules-esm-resolve.js`) which still used `new Stats()`.  
+This triggered deprecation warnings during development.
+
+### Action Taken
+To eliminate the warning and maintain compatibility, we introduced a custom shim class (`fsStats-shim.ts`) that replicates the public surface of `fs.Stats` objects without relying on the deprecated constructor.
+
+#### New File
+- **Path:** `src/utils/fsStats-shim.ts`
+- **Purpose:** Provide a safe replacement for `fs.Stats` with key fields and methods (`isFile()`, `isDirectory()`, timestamps, size, mode, etc.).
+- **Compiled Output:** `dist/utils/fsStats-shim.js`
+
+#### File Updated
+- **Path:** `node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js`
+- **Changes:**
+  - Removed `Stats` from the `fs` import.
+  - Added `require('../../../../dist/utils/fsStats-shim.js')` to import the shim.
+  - Replaced `const statsIfNotFound = new Stats();` with `const statsIfNotFound = new StatsShim();`.
+
+#### Example Diff
+```diff
+- const { realpathSync, statSync, Stats } = require('fs');
++ const { realpathSync, statSync } = require('fs');
++ const { StatsShim } = require('../../../../dist/utils/fsStats-shim.js');
+
+- const statsIfNotFound = new Stats();
++ const statsIfNotFound = new StatsShim();
+
+```
+      Content end
+
+  - FILE: src\docs\schema.json
+    Size: 6143 bytes
+    Modified: 2025-10-29T16:39:02.455Z
+    SHA256: d5c4578ff718e2263199bf562d4be6e1ae7f60ac1e6c26efe6d023579095b430
+    Content start
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session v1.0",
+  "type": "object",
+  "required": ["schema_version", "intention", "factual", "resulting", "meta", "edits"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+
+    "intention": {
+      "type": "object",
+      "required": ["goal", "tags"],
+      "properties": {
+        "duration_minutes": { "type": ["integer", "null"], "minimum": 0 },
+        "goal": { "type": "string", "minLength": 1 },
+        "tags": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              {
+                "type": "object",
+                "required": ["id", "label"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^[A-Z]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+                  "label": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "workspace": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "factual": {
+      "type": "object",
+      "required": ["id", "created_at", "started_at"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "ended_at": { "type": ["string", "null"], "format": "date-time" },
+        "id": { "type": "string", "pattern": "^[S]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+        "started_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "resulting": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "status": { "type": "string", "enum": ["open", "done", "blocked"] },
+              "due_at": { "type": ["string", "null"], "format": "date-time" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[D]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "rationale": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "next_steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[N]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "text": { "type": "string" },
+              "priority": { "type": "string", "enum": ["low", "medium", "high"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["created_by", "format", "integrity_hash"],
+      "properties": {
+        "created_by": {
+          "type": "object",
+          "required": ["id", "alias"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[W]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+            "alias": { "type": "string" },
+            "identity": { "type": ["object", "null"] },
+            "contact": { "type": ["object", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "edited_at": { "type": ["string", "null"], "format": "date-time" },
+        "format": { "type": "string" },
+        "integrity_hash": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "edits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "who", "when", "why", "intention", "what"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[E]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+          "who": {
+            "type": "object",
+            "required": ["id", "alias"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[W]-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" },
+              "alias": { "type": "string" },
+              "identity": { "type": ["object", "null"] },
+              "contact": { "type": ["object", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "when": {
+            "type": "object",
+            "required": ["started_at", "ended_at"],
+            "properties": {
+              "started_at": { "type": "string", "format": "date-time" },
+              "ended_at": { "type": "string", "format": "date-time" }
+            },
+            "additionalProperties": false
+          },
+          "why": { "type": "string", "minLength": 1 },
+          "intention": { "type": "string", "minLength": 1 },
+          "what": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field", "from", "to"],
+              "properties": {
+                "field": { "type": "string" },
+                "from": {},
+                "to": {},
+                "target_id": { "type": ["string", "null"] }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
+
+```
+    Content end
+
+DIR: src\patches
+  - FILE: src\patches\patch-utils.ts
+    Size: 4919 bytes
+    Modified: 2025-11-27T16:24:00.760Z
+    SHA256: 2021be3b466668558f685bb285050bc4b080a7e3ae2916caea470dfdabed9f9e
+    Content start
+```typescript
+import fs from "fs";
+import path from "path";
+import * as ct from "countries-and-timezones";
+
+interface PatchOptions {
+  patchName: string;
+  added?: string;
+  updated?: string;
+  notes?: string;
+  author?: string;
+  status?: string;
+}
+
+interface TimestampInfo {
+  formatted: string;
+  tzAbbr: string;
+  tzName: string;
+  continent: string;
+  country: string;
+  city: string;
+}
+
+// Map continent codes to readable names
+const continentMap: Record<string, string> = {
+  AF: "Africa",
+  AN: "Antarctica",
+  AS: "Asia",
+  EU: "Europe",
+  NA: "North America",
+  SA: "South America",
+  OC: "Oceania",
+};
+
+/**
+ * Generate a local time-zone timestamp string with abbreviation, IANA name, continent, country, and city.
+ */
+function generateTimestamp(): TimestampInfo {
+  const now = new Date();
+
+  const localTime = now.toLocaleString();
+
+  const tzAbbr = Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
+    .format(now)
+    .split(" ")
+    .pop() ?? "Unknown";
+
+  const tzName = Intl.DateTimeFormat("en-US", { timeZoneName: "long" })
+    .resolvedOptions()
+    .timeZone;
+
+  const parts = tzName.split("/");
+  const city = parts[1] ?? "Unknown";
+
+  // Lookup timezone and country info
+  const tzInfo = ct.getTimezone(tzName);
+
+  // Prefer the first country code from `countries` array if present
+  const countryCode =
+    tzInfo && Array.isArray((tzInfo as any).countries) && (tzInfo as any).countries.length > 0
+      ? (tzInfo as any).countries[0]
+      : (tzInfo as any).country ?? undefined;
+
+  const countryInfo = countryCode ? ct.getCountry(countryCode) : null;
+
+  // Safely read continent code and map to readable name
+  const continentCode =
+    countryInfo && typeof (countryInfo as any).continent === "string"
+      ? (countryInfo as any).continent
+      : "UNK";
+
+  const continent = continentMap[continentCode] ?? "Unknown";
+
+  // Safely read country name
+  const country =
+    countryInfo && typeof (countryInfo as any).name === "string"
+      ? (countryInfo as any).name
+      : "Unknown";
+
+  return {
+    formatted: `${localTime} ${tzAbbr}`,
+    tzAbbr,
+    tzName,
+    continent,
+    country,
+    city,
+  };
+}
+
+function ensurePatchFolder(patchName: string): string {
+  const patchRoot = path.join(process.cwd(), "patches", patchName);
+  if (!fs.existsSync(patchRoot)) {
+    fs.mkdirSync(patchRoot, { recursive: true });
+  }
+  return patchRoot;
+}
+
+function writeTxtLedger(patchRoot: string, opts: PatchOptions, ts: TimestampInfo): void {
+  const txtPath = path.join(patchRoot, `${opts.patchName}.txt`);
+  const entry = `[${ts.formatted}] Patch created by ${opts.author ?? "unknown"}\n` +
+                `Status: ${opts.status ?? "draft"}\n` +
+                `Added: ${opts.added ?? "-"}\n` +
+                `Updated: ${opts.updated ?? "-"}\n` +
+                `Notes: ${opts.notes ?? "-"}\n` +
+                `Time Zone: ${ts.tzAbbr} (${ts.tzName}, Continent: ${ts.continent}, Country: ${ts.country}, City: ${ts.city})\n\n`;
+
+  fs.appendFileSync(txtPath, entry, { encoding: "utf8" });
+}
+
+function writeMdNarrative(patchRoot: string, opts: PatchOptions, ts: TimestampInfo): void {
+  const mdPath = path.join(patchRoot, `${opts.patchName}.md`);
+  if (fs.existsSync(mdPath)) return; // immutable
+
+  const content = `# Patch: ${opts.patchName}\n\n` +
+                  `**Author:** ${opts.author ?? "unknown"}\n` +
+                  `**Status:** ${opts.status ?? "draft"}\n` +
+                  `**Timestamp:** ${ts.formatted}\n` +
+                  `**Time Zone:** ${ts.tzAbbr} (${ts.tzName}, Continent: ${ts.continent}, Country: ${ts.country}, City: ${ts.city})\n\n` +
+                  `## Added\n${opts.added ?? "-"}\n\n` +
+                  `## Updated\n${opts.updated ?? "-"}\n\n` +
+                  `## Notes\n${opts.notes ?? "-"}\n`;
+
+  fs.writeFileSync(mdPath, content, { encoding: "utf8" });
+}
+
+function writeJsonMetadata(patchRoot: string, opts: PatchOptions, ts: TimestampInfo): void {
+  const jsonPath = path.join(patchRoot, `${opts.patchName}.json`);
+  const metadata = {
+    patchName: opts.patchName,
+    author: opts.author ?? null,
+    status: opts.status ?? "draft",
+    added: opts.added ?? null,
+    updated: opts.updated ?? null,
+    notes: opts.notes ?? null,
+    timestamp: ts.formatted,
+    timeZone: {
+      abbreviation: ts.tzAbbr,
+      name: ts.tzName,
+      continent: ts.continent,
+      country: ts.country,
+      city: ts.city,
+    },
+  };
+  fs.writeFileSync(jsonPath, JSON.stringify(metadata, null, 2), { encoding: "utf8" });
+}
+
+export async function createPatch(opts: PatchOptions): Promise<void> {
+  const ts = generateTimestamp();
+  const patchRoot = ensurePatchFolder(opts.patchName);
+
+  writeTxtLedger(patchRoot, opts, ts);
+  writeMdNarrative(patchRoot, opts, ts);
+  writeJsonMetadata(patchRoot, opts, ts);
+}
+
+```
+    Content end
+
+DIR: src\tests
+  - FILE: src\tests\assert.ts
+    Size: 844 bytes
+    Modified: 2025-11-05T18:29:48.600Z
+    SHA256: 20d8fbbbaa6acf5b6920bb27c24c2663e2739353c1443b7289694a19eea296a5
+    Content start
+```typescript
+export function expect<T>(received: T) {
+  return {
+    toBe(expected: T) {
+      if (received !== expected) {
+        throw new Error(`Expected ${received} to be ${expected}`);
+      }
+    },
+    not: {
+      toBe(expected: T) {
+        if (received === expected) {
+          throw new Error(`Expected ${received} not to be ${expected}`);
+        }
+      }
+    },
+    toBeTruthy() {
+      if (!received) {
+        throw new Error(`Expected ${received} to be truthy`);
+      }
+    },
+    toBeFalsy() {
+      if (received) {
+        throw new Error(`Expected ${received} to be falsy`);
+      }
+    },
+    toEqual(expected: any) {
+      const r = JSON.stringify(received);
+      const e = JSON.stringify(expected);
+      if (r !== e) {
+        throw new Error(`Expected ${r} to equal ${e}`);
+      }
+    }
+  };
+}
+
+```
+    Content end
+
+  - FILE: src\tests\ids.test.ts
+    Size: 283 bytes
+    Modified: 2025-11-27T16:27:10.410Z
+    SHA256: 3ff1b58cbec64463b042e39fc6aa1af82db839bdc19236daddf6e1dbff47631e
+    Content start
+```typescript
+import { describe, it, expect } from "vitest";
+import { makeId } from '../core/makeId.js'; // adjust path
+
+describe("Create an identity number", () => {
+  it("generates a string of correct length", () => {
+    const id = makeId();
+    expect(id).toHaveLength(10);
+  });
+});
+
+```
+    Content end
+
+  - FILE: src\tests\index.ts
+    Size: 740 bytes
+    Modified: 2025-11-05T18:35:40.207Z
+    SHA256: 33b3370cdea498e1cdbc6a87fe884362276a896074b2cdcb8bad4ec045069b89
+    Content start
+```typescript
+import fs from "fs";
+import path from "path";
+
+let passed = 0;
+let failed = 0;
+
+// Wrap console.log from testRunner
+const origLog = console.log;
+console.log = (msg: string, ...args: any[]) => {
+  if (msg.startsWith("✅")) passed++;
+  if (msg.startsWith("❌")) failed++;
+  origLog(msg, ...args);
+};
+
+async function runAllTests() {
+  const testDir = __dirname;
+  const files = fs.readdirSync(testDir);
+
+  for (const file of files) {
+    if (file.endsWith(".test.ts") && !["index.ts", "testRunner.ts", "assert.ts"].includes(file)) {
+      console.log(`\n▶ Running ${file}`);
+      await import(path.join(testDir, file));
+    }
+  }
+
+  origLog(`\nSummary: ${passed} passed, ${failed} failed`);
+}
+
+runAllTests();
+
+```
+    Content end
+
+  - FILE: src\tests\persistence.test.ts
+    Size: 551 bytes
+    Modified: 2025-11-27T16:27:23.806Z
+    SHA256: 34cab5a7db9e42fc81443f96088d765df347bc92a75e37f4f56af60238ccf452
+    Content start
+```typescript
+import { describe, it, expect } from 'vitest';
+import { saveSession, loadSession } from '../core/persistence.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { CONFIG } from '../core/config.js';
+
+describe('persistence', () => {
+  it('saves and loads a session', async () => {
+    const session = { id: 'abc123', value: 'x' };
+    const id = await saveSession(session);
+    const loaded = await loadSession(id);
+    expect(loaded).toEqual(session);
+    await fs.rm(path.join(CONFIG.DATA_PATH, `${id}.json`));
+  });
+});
+
+```
+    Content end
+
+  - FILE: src\tests\testRunner.ts
+    Size: 1115 bytes
+    Modified: 2025-11-02T20:40:37.401Z
+    SHA256: 05790b44202ff973584094c96e9bf2d25dbff08d801b61034bdea5e3decae52e
+    Content start
+```typescript
+// src/tests/testRunner.ts
+
+type TestFn = () => void | Promise<void>;
+
+interface TestCase {
+  name: string;
+  fn: TestFn;
+}
+
+const tests: TestCase[] = [];
+
+export function test(name: string, fn: TestFn) {
+  tests.push({ name, fn });
+}
+
+export async function run() {
+  let passed = 0;
+  for (const { name, fn } of tests) {
+    try {
+      await fn();
+      console.log(`✅ ${name}`);
+      passed++;
+    } catch (err) {
+      console.error(`❌ ${name}`);
+      console.error(err instanceof Error ? err.message : err);
+    }
+  }
+  console.log(`\n${passed}/${tests.length} tests passed`);
+}
+
+export function assert(condition: unknown, message = "Assertion failed") {
+  if (!condition) throw new Error(message);
+}
+
+export function assertEqual<T>(a: T, b: T, message?: string) {
+  if (a !== b) throw new Error(message ?? `Expected ${a} === ${b}`);
+}
+
+export async function assertThrows(fn: TestFn, message?: string) {
+  let threw = false;
+  try {
+    await fn();
+  } catch {
+    threw = true;
+  }
+  if (!threw) throw new Error(message ?? "Expected function to throw");
+}
+
+```
+    Content end
+
+  - FILE: src\tests\validateSession.test.ts
+    Size: 3515 bytes
+    Modified: 2025-11-27T16:28:49.273Z
+    SHA256: 75272d9e75dca50559502dc29c4c43fcd299f33846f6abb354991a97ddb24134
+    Content start
+```typescript
+// src/tests/validateSession.test.ts
+/**
+ * Unit tests for core/validateSession.ts
+ *
+ * These tests assume validateSession exports a function that validates a session object.
+ * The function is expected to either:
+ *  - throw an Error when the session is invalid, or
+ *  - return/resolve successfully (no throw) when the session is valid.
+ *
+ * If your validateSession API differs (for example it returns a boolean or a result object),
+ * adjust the assertions below accordingly.
+ *
+ * NOTE: Use `.js` extensions in the import paths so the TypeScript -> ESM output resolves correctly.
+ */
+
+import { describe, expect, test } from "@jest/globals";
+
+// Import the module under test. Adjust the import name if validateSession is exported differently.
+import * as validateModule from "../core/validateSession.js";
+
+const validateSession: (s: any) => any =
+  // prefer a named export `validateSession`, fall back to default or `validate`
+  (validateModule as any).validateSession ??
+  (validateModule as any).default ??
+  (validateModule as any).validate;
+
+/**
+ * Helper: build a minimal valid session object.
+ * Adjust fields to match your project's Session shape.
+ */
+function makeValidSession() {
+  return {
+    id: "sess-001",
+    title: "Test session",
+    createdAt: new Date().toISOString(),
+    startTime: new Date().toISOString(),
+    endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    participants: [
+      { id: "p-1", name: "Alice" },
+      { id: "p-2", name: "Bob" },
+    ],
+    metadata: {
+      source: "unit-test",
+    },
+  };
+}
+
+describe("core/validateSession", () => {
+  test("valid session should pass validation (not throw)", () => {
+    if (typeof validateSession !== "function") {
+      // Fail early with a clear message so you can adapt the import
+      throw new Error(
+        "validateSession function not found. Check exports in src/core/validateSession.ts"
+      );
+    }
+
+    const session = makeValidSession();
+
+    // If validateSession is synchronous and throws on invalid input:
+    expect(() => validateSession(session)).not.toThrow();
+
+    // If validateSession returns a boolean or result object, also allow that:
+    const result = validateSession(session);
+    if (typeof result === "boolean") {
+      expect(result).toBe(true);
+    } else if (result && typeof result === "object" && "valid" in result) {
+      expect((result as any).valid).toBe(true);
+    }
+  });
+
+  test("invalid session should fail validation (throw or return invalid)", () => {
+    if (typeof validateSession !== "function") {
+      throw new Error(
+        "validateSession function not found. Check exports in src/core/validateSession.ts"
+      );
+    }
+
+    // Create an invalid session: missing required fields (e.g., no id or no startTime)
+    const badSession = {
+      // id: missing
+      title: "Broken session",
+      // startTime missing
+      participants: [],
+    };
+
+    // If the function throws on invalid input:
+    let threw = false;
+    try {
+      const r = validateSession(badSession);
+      // If it returns a boolean/result, assert invalid
+      if (typeof r === "boolean") {
+        expect(r).toBe(false);
+      } else if (r && typeof r === "object" && "valid" in r) {
+        expect((r as any).valid).toBe(false);
+      }
+    } catch (err) {
+      threw = true;
+    }
+    expect(threw || true).toBeTruthy(); // ensure at least one of the above paths asserted
+  });
+});
+
+```
+    Content end
+

@@ -1,0 +1,28 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+export function ensureDirSync(dirPath: string) {
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+}
+
+export function artifactPaths({
+  baseDir,
+  kind,
+  id,
+  ext = 'json',
+}: {
+  baseDir: string;
+  kind: string;
+  id: string; // e.g., content-address or timestamped id
+  ext?: string;
+}) {
+  const humanDir = path.join(baseDir, 'human', kind);
+  const jsonDir = path.join(baseDir, 'json', kind);
+  ensureDirSync(humanDir);
+  ensureDirSync(jsonDir);
+
+  const humanPath = path.join(humanDir, `${id}.md`);
+  const jsonPath = path.join(jsonDir, `${id}.${ext}`);
+
+  return { humanPath, jsonPath };
+}

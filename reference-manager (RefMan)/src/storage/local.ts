@@ -1,4 +1,4 @@
-import { createWriteStream, promises as fs } from "node:fs";
+import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { RefEvent } from "../core/types.js";
 import { project } from "../core/index.js";

@@ -2,7 +2,7 @@
 // Use global fetch (Node 18+) instead of node-fetch to avoid external dependency and missing types
 const fetch = (globalThis as any).fetch;
 import { parse } from "csv-parse/sync";
-import fs from "fs";
+import fs from "node:fs";
 const RAW_CSV_URL = "https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv";
 
 async function main() {

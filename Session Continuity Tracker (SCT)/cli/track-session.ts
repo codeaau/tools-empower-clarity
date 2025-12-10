@@ -2,14 +2,14 @@
 // cli/track-session.ts
 // TypeScript CLI for Session Continuity Tracker (SCT)
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import readline from "readline";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import readline from "node:readline";
 
-type ExportFormat = "json" | "md" | "markdown" | "";
+export type ExportFormat = "json" | "md" | "markdown" | "";
 
-interface Options {
+export interface Options {
   goal: string;
   tags: string;           // semicolon-separated
   duration: string;       // freeform (e.g., "30m", "1h")
@@ -28,7 +28,7 @@ interface Options {
   interactive: boolean;
 }
 
-interface SessionEntry {
+export interface SessionEntry {
   number: number;
   date: string;
   goal: string;
@@ -39,7 +39,7 @@ interface SessionEntry {
   tags: string;
 }
 
-interface LogOptions {
+export interface LogOptions {
   goal?: string;
   tags?: string;
   duration?: string;
@@ -56,7 +56,7 @@ const sessionLogPath = path.join(projectRoot, "session-log.txt");
 const stateFile = path.join(projectRoot, ".sct-session.json");
 
 // ---------- Argument parsing ----------
-function parseArgs(args: string[]): Options {
+export function parseArgs(args: string[]): Options {
   const parsed: Options = {
     action: "",
     duration: "",
@@ -139,7 +139,7 @@ function parseArgs(args: string[]): Options {
 }
 
 // ---------- File and formatting helpers ----------
-function ensureHeader(): void {
+export function ensureHeader(): void {
   if (!fs.existsSync(sessionLogPath)) {
     const header = `# Session Continuity Tracker Log
 ====================================================
@@ -149,14 +149,14 @@ function ensureHeader(): void {
   }
 }
 
-function getNextSessionNumber(): number {
+export function getNextSessionNumber(): number {
   if (!fs.existsSync(sessionLogPath)) return 1;
   const content = fs.readFileSync(sessionLogPath, "utf-8");
   const matches = content.match(/Session #(\d+)/g) ?? [];
   return matches.length + 1;
 }
 
-function listFromString(input?: string, sep = ","): string[] {
+export function listFromString(input?: string, sep = ","): string[] {
   if (!input) return [];
   return input
     .split(sep)
@@ -164,12 +164,12 @@ function listFromString(input?: string, sep = ","): string[] {
     .filter(Boolean);
 }
 
-function formatListForLog(items: string[]): string {
+export function formatListForLog(items: string[]): string {
   return items.length ? items.map((i) => `- ${i}`).join("\n") : "-";
 }
 
 // ---------- Logging / append ----------
-function appendLog(opts: LogOptions): void {
+export function appendLog(opts: LogOptions): void {
   ensureHeader();
   const now = new Date();
   const timestamp = now.toISOString().replace("T", " ").split(".")[0];
@@ -205,7 +205,7 @@ Tags: ${opts.tags ?? ""}
 }
 
 // ---------- Parsing the log into structured sessions ----------
-function parseAllSessions(): SessionEntry[] {
+export function parseAllSessions(): SessionEntry[] {
   if (!fs.existsSync(sessionLogPath)) return [];
   const content = fs.readFileSync(sessionLogPath, "utf-8");
   const rawEntries = content
@@ -247,7 +247,7 @@ function parseAllSessions(): SessionEntry[] {
 }
 
 // ---------- CLI actions ----------
-function showSummary(filterTag = ""): void {
+export function showSummary(filterTag = ""): void {
   const sessions = parseAllSessions();
   if (sessions.length === 0) {
     console.log("No session-log.txt found yet.");
@@ -275,7 +275,7 @@ function showSummary(filterTag = ""): void {
   console.log("========================\n");
 }
 
-function exportSessions(format: ExportFormat, outFile = ""): void {
+export function exportSessions(format: ExportFormat, outFile = ""): void {
   const sessions = parseAllSessions();
   if (sessions.length === 0) {
     console.error("No session-log.txt found yet.");
@@ -353,7 +353,7 @@ function searchSessions(keyword: string): void {
   console.log("========================\n");
 }
 
-function showDetail(sessionNumber: number): void {
+export function showDetail(sessionNumber: number): void {
   const sessions = parseAllSessions();
   if (sessions.length === 0) {
     console.log("No session-log.txt found yet.");

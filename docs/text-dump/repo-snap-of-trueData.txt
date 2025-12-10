@@ -1,0 +1,1012 @@
+REPO SNAPSHOT
+Generated: 2025-12-02T17:47:42.529Z
+Root: C:\Users\User\Desktop\Topi Apps\MS Copilot\Programming\projects\tools - empower - clarity
+Git branch: main
+Git commit: 1f333c8
+---
+
+DIR: trueData\core
+  - FILE: trueData\core\sampleEntries.ts
+    Size: 3990 bytes
+    Modified: 2025-11-13T15:46:30.359Z
+    SHA256: 4b9aafe729d35ef7690f161a26e707dc69da265844f2d4abc4d0635f36ddda17
+    Content start
+```typescript
+// trueData/core/sampleEntries.ts
+import { v4 as uuidv4 } from "uuid";
+import { resolveTimeZone, ResolvedLocation } from "../utils/resolveTimeZone";
+import { resolveFromCoordinates } from "../utils/resolveFromCoordinates";
+import { appendProvenance } from "../utils/provenanceAudit";
+
+export type entry = "data" | "event" | "command" | "input" | "session";
+
+export type ProvenanceMethod = "entered" | "inferred" | "system-default";
+
+export interface Provenance {
+  method: ProvenanceMethod;
+  source: string; // e.g., "coordinates", "tzName", "system"
+  confirmedByUser?: boolean;
+  timestamp: string;
+  rawResolverOutput?: any;
+}
+
+export class Data {
+  public type: entry;
+  public creation: string;
+  public id: string;
+  public location: ResolvedLocation;
+  public provenance: Provenance;
+
+  constructor(
+    type: entry,
+    opts: { tzName?: string; coordinates?: [number, number]; provenance?: Partial<Provenance> } = {}
+  ) {
+    this.type = type;
+    this.creation = new Date().toISOString();
+    const safeCreation = this.creation.replace(/[:.]/g, "-");
+    this.id = `${this.type[0].toUpperCase()}-${safeCreation}-${uuidv4()}`;
+
+    // Default provenance object
+    const baseProv: Provenance = {
+      method: "system-default",
+      source: "system",
+      confirmedByUser: false,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (opts.coordinates) {
+      // Coordinates path (entered by user or provided)
+      // Note: resolveFromCoordinates is async; but constructor must be sync.
+      // To keep API simple, we resolve synchronously by calling a helper below.
+      throw new Error(
+        "Use Data.createWithCoordinates(...) for coordinate-based creation (async)."
+      );
+    } else {
+      const tz = opts.tzName ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+      this.location = resolveTimeZone(tz);
+      this.provenance = {
+        ...baseProv,
+        method: opts.tzName ? "entered" : "system-default",
+        source: opts.tzName ? "tzName" : "system",
+        confirmedByUser: !!opts.provenance?.confirmedByUser,
+        timestamp: new Date().toISOString(),
+      };
+      // Log provenance
+      appendProvenance({
+        id: uuidv4(),
+        eventId: this.id,
+        method: this.provenance.method,
+        source: this.provenance.source,
+        rawResolverOutput: { tzName: tz },
+        userConfirmed: this.provenance.confirmedByUser,
+        timestamp: this.provenance.timestamp,
+      }).catch(() => {});
+    }
+  }
+
+  static async createWithCoordinates(
+    type: entry,
+    coords: [number, number],
+    confirmedByUser = true
+  ): Promise<Data> {
+    const d = Object.create(Data.prototype) as Data;
+    d.type = type;
+    d.creation = new Date().toISOString();
+    const safeCreation = d.creation.replace(/[:.]/g, "-");
+    d.id = `${d.type[0].toUpperCase()}-${safeCreation}-${uuidv4()}`;
+
+    const resolved = await resolveFromCoordinates(coords);
+    d.location = resolved.location;
+    d.provenance = {
+      method: "entered",
+      source: "coordinates",
+      confirmedByUser,
+      timestamp: new Date().toISOString(),
+      rawResolverOutput: resolved.raw,
+    };
+
+    // Log provenance with eventId
+    await appendProvenance({
+      id: uuidv4(),
+      eventId: d.id,
+      method: d.provenance.method,
+      source: d.provenance.source,
+      rawResolverOutput: d.provenance.rawResolverOutput,
+      userConfirmed: d.provenance.confirmedByUser,
+      timestamp: d.provenance.timestamp,
+    });
+
+    return d;
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      type: this.type,
+      creation: this.creation,
+      location: this.location,
+      provenance: this.provenance,
+    };
+  }
+
+  get(): string {
+    return `Type: ${this.type}, Creation: ${this.creation}, ID: ${this.id}, Location: ${JSON.stringify(
+      this.location
+    )}, Provenance: ${JSON.stringify(this.provenance)}`;
+  }
+}
+
+```
+    Content end
+
+DIR: trueData\data
+  - FILE: trueData\data\countryToContinent.json
+    Size: 215 bytes
+    Modified: 2025-11-13T16:12:39.882Z
+    SHA256: a0af4d9bf2a29fcf4ecf14be71fb5a98395497171c39c069c61d2e9ee002c73b
+    Content start
+```json
+{
+  "US": "Americas",
+  "CA": "Americas",
+  "MX": "Americas",
+  "GB": "Europe",
+  "FR": "Europe",
+  "DE": "Europe",
+  "CN": "Asia",
+  "JP": "Asia",
+  "IN": "Asia",
+  "AU": "Oceania",
+  "ZA": "Africa"
+}
+
+```
+    Content end
+
+DIR: trueData\interfaces
+  - FILE: trueData\interfaces\ITimezoneResolver.ts
+    Size: 349 bytes
+    Modified: 2025-11-13T15:59:30.496Z
+    SHA256: 64bb683d60a43e60c7e827c31b69fa1f3ed0b7bfa10346e94c487e8e5a2b9b66
+    Content start
+```typescript
+// trueData/interfaces/ITimezoneResolver.ts
+import { ResolvedLocation } from "../utils/resolveTimeZone";
+
+export interface ITimezoneResolver {
+  resolveFromCoordinates(lat: number, lon: number): Promise<{ tzName: string; resolved: ResolvedLocation; raw?: any }>;
+  resolveFromTzName(tzName: string): ResolvedLocation;
+  version(): string;
+}
+
+```
+    Content end
+
+DIR: trueData\logs
+  - FILE: trueData\logs\provenance-report.json
+    Size: 0 bytes
+    Modified: 2025-11-19T11:23:40.210Z
+    SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    Content start
+```json
+
+```
+    Content end
+
+  - FILE: trueData\logs\schema-validation.json
+    Size: 983 bytes
+    Modified: 2025-11-27T16:55:54.096Z
+    SHA256: 99394cf6abd30beca3855d46a798f42a1fd2dac341d28d1aa1625e2de0ceaba2
+    Content start
+```json
+{
+  "status": "error",
+  "error": {
+    "message": "ENOENT: no such file or directory, open 'C:\\Users\\User\\Desktop\\Topi Apps\\MS Copilot\\Programming\\projects\\tools - empower - clarity\\dist\\trueData\\schema.json'",
+    "name": "Error",
+    "source": "trueData/validator.ts",
+    "function": "run",
+    "location": "unknown",
+    "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\User\\Desktop\\Topi Apps\\MS Copilot\\Programming\\projects\\tools - empower - clarity\\dist\\trueData\\schema.json'\n    at async open (node:internal/fs/promises:642:25)\n    at async Object.readFile (node:internal/fs/promises:1279:14)\n    at async run (file:///C:/Users/User/Desktop/Topi%20Apps/MS%20Copilot/Programming/projects/tools%20-%20empower%20-%20clarity/dist/trueData/validator.js:16:27)\n    at async Command.<anonymous> (file:///C:/Users/User/Desktop/Topi%20Apps/MS%20Copilot/Programming/projects/tools%20-%20empower%20-%20clarity/dist/cli/clarity.js:51:9)"
+  }
+}
+```
+    Content end
+
+  - FILE: trueData\logs\schema-validation.log
+    Size: 813 bytes
+    Modified: 2025-11-27T16:55:54.096Z
+    SHA256: 7e06d22fdfa0b61f0f93f8eb4fde623164a9bc681dfd0781fc0e8c234b81fffe
+    Content start
+[ERROR] ENOENT: no such file or directory, open 'C:\Users\User\Desktop\Topi Apps\MS Copilot\Programming\projects\tools - empower - clarity\dist\trueData\schema.json' (trueData/validator.ts:unknown)
+Error: ENOENT: no such file or directory, open 'C:\Users\User\Desktop\Topi Apps\MS Copilot\Programming\projects\tools - empower - clarity\dist\trueData\schema.json'
+    at async open (node:internal/fs/promises:642:25)
+    at async Object.readFile (node:internal/fs/promises:1279:14)
+    at async run (file:///C:/Users/User/Desktop/Topi%20Apps/MS%20Copilot/Programming/projects/tools%20-%20empower%20-%20clarity/dist/trueData/validator.js:16:27)
+    at async Command.<anonymous> (file:///C:/Users/User/Desktop/Topi%20Apps/MS%20Copilot/Programming/projects/tools%20-%20empower%20-%20clarity/dist/cli/clarity.js:51:9)
+    Content end
+
+  - FILE: trueData\logs\smoke.log
+    Size: 5 bytes
+    Modified: 2025-11-21T10:21:51.618Z
+    SHA256: f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2
+    Content start
+test
+    Content end
+
+  - FILE: trueData\logs\test-results.log
+    Size: 3009 bytes
+    Modified: 2025-11-18T10:32:06.922Z
+    SHA256: f77f51ebb3d805434bedf80016fa84ae0376072df0aeb90ad3202f6db102f419
+    Content start
+
+> test
+> jest --runInBand --reporters=default
+
+FAIL src/tests/validateSession.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/dist/tests/core.test.js
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/tests/core.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/dist/tests/projection.test.js
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/tests/projection.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/tests/storage.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL reference-manager (RefMan)/dist/tests/storage.test.js
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL src/tests/persistence.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL Session Continuity Tracker (SCT)/src/tests/session.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+FAIL src/tests/ids.test.ts
+  ● Test suite failed to run
+
+    SecurityError: Cannot initialize local storage without a `--localstorage-file` path
+
+      at get (node_modules/jest-environment-node/build/index.js:99:39)
+          at Array.forEach (<anonymous>)
+
+Test Suites: 10 failed, 10 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.265 s
+Ran all test suites.
+    Content end
+
+DIR: trueData\resolvers
+  - FILE: trueData\resolvers\geoTzResolver.ts
+    Size: 606 bytes
+    Modified: 2025-11-13T16:00:03.876Z
+    SHA256: 3216ad2caa89df1d998378ca892d87e8b835b826a31c9443330f5653a738d5d5
+    Content start
+```typescript
+// trueData/resolvers/geoTzResolver.ts
+import { ITimezoneResolver } from "../interfaces/ITimezoneResolver";
+import { resolveCoordinates } from "../utils/coordinateResolver";
+
+export class GeoTzResolver implements ITimezoneResolver {
+  async resolveFromCoordinates(lat: number, lon: number) {
+    const r = await resolveCoordinates(lat, lon);
+    return { tzName: r.tzName, resolved: r.resolved, raw: r.candidates };
+  }
+  resolveFromTzName(tzName: string) {
+    return require("../utils/resolveTimeZone").resolveTimeZone(tzName);
+  }
+  version() {
+    return "geo-tz-resolver@1.0.0";
+  }
+}
+
+```
+    Content end
+
+DIR: trueData\scripts
+  - FILE: trueData\scripts\generate-country-to-continent.ts
+    Size: 1118 bytes
+    Modified: 2025-11-18T09:01:48.967Z
+    SHA256: 0253901402775b086909e99a67880d2699754adf4dd05730329fdc3df730f347
+    Content start
+```typescript
+// scripts/generate-country-to-continent.ts
+// Use global fetch (Node 18+) instead of node-fetch to avoid external dependency and missing types
+const fetch = (globalThis as any).fetch;
+import { parse } from "csv-parse/sync";
+import fs from "fs";
+const RAW_CSV_URL = "https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv";
+
+async function main() {
+  const res = await fetch(RAW_CSV_URL);
+  const csv = await res.text();
+  const rows = parse(csv, { columns: true }) as Array<Record<string, string>>;
+  const map: Record<string, string> = {};
+  for (const r of rows) {
+    const alpha2 = (r["alpha-2"] || r["alpha2"] || r["alpha_2"] || "").trim();
+    const region = (r["region"] || r["Region"] || r["continent"] || "").trim();
+    if (alpha2 && region) map[alpha2] = region;
+  }
+  fs.mkdirSync("trueData/data", { recursive: true });
+  fs.writeFileSync("trueData/data/countryToContinent.json", JSON.stringify(map, null, 2), "utf8");
+  console.log("Wrote trueData/data/countryToContinent.json");
+}
+main().catch(e => { console.error(e); process.exit(1); });
+```
+    Content end
+
+DIR: trueData\utils
+  - FILE: trueData\utils\consentMiddleware.ts
+    Size: 1495 bytes
+    Modified: 2025-11-13T15:53:32.285Z
+    SHA256: 28b86dd9374d534abaa7c3aefa9c7dfbd00b00cecbc0b0234768973eb065becd
+    Content start
+```typescript
+// trueData/utils/consentMiddlewareV2.ts
+import readline from "node:readline";
+
+export type Sensitivity = "low" | "medium" | "high";
+
+export interface ConsentOptions {
+  reason: string;
+  sensitivity?: Sensitivity;
+  retention?: string; // e.g., "transient", "session", "persistent"
+}
+
+function promptYesNo(question: string): Promise<boolean> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => {
+    rl.question(`${question} (y/N): `, answer => {
+      rl.close();
+      const a = (answer || "").trim().toLowerCase();
+      resolve(a === "y" || a === "yes");
+    });
+  });
+}
+
+export async function requestConsent(opts: ConsentOptions): Promise<{ granted: boolean; timestamp: string }> {
+  const q = `Consent request: ${opts.reason}\nSensitivity: ${opts.sensitivity ?? "medium"}; Retention: ${opts.retention ?? "session"}\nDo you consent?`;
+  const granted = await promptYesNo(q);
+  return { granted, timestamp: new Date().toISOString() };
+}
+
+/**
+ * Wrapper for actions that require consent.
+ * Example: await withConsent({reason:"capture coordinates"}, async () => { ... })
+ */
+export async function withConsent<T>(opts: ConsentOptions, action: () => Promise<T>): Promise<T | null> {
+  const { granted, timestamp } = await requestConsent(opts);
+  if (!granted) {
+    console.log(`Consent denied (${timestamp}) — skipping ${opts.reason}`);
+    return null;
+  }
+  return action();
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\coordinateResolver.ts
+    Size: 984 bytes
+    Modified: 2025-11-13T15:58:54.937Z
+    SHA256: bd2851155af4ce6b37410a6c713f8ac4ddcda12679a4f439fc440a680fa18683
+    Content start
+```typescript
+// trueData/utils/coordinateResolver.ts
+import { LRUCache } from "lru-cache";
+import { find as geoTzFind } from "geo-tz";
+import tzlookup from "tz-lookup"; // optional fallback
+import { resolveTimeZone } from "./resolveTimeZone";
+
+const cache = new LRUCache<string, any>({ max: 5000, ttl: 1000 * 60 * 60 * 24 }); // 1 day
+
+export async function resolveCoordinates(lat: number, lon: number) {
+  const key = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+  if (cache.has(key)) return cache.get(key);
+
+  let candidates: string[] = [];
+  try {
+    candidates = geoTzFind(lat, lon);
+  } catch {
+    try {
+      const tz = tzlookup(lat, lon);
+      candidates = [tz];
+    } catch {
+      candidates = [];
+    }
+  }
+
+  const tzName = candidates[0] ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC";
+  const resolved = resolveTimeZone(tzName);
+
+  const result = { tzName, candidates, resolved, confidence: candidates.length ? 0.95 : 0.5 };
+  cache.set(key, result);
+  return result;
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\countryToContinent.ts
+    Size: 572 bytes
+    Modified: 2025-11-13T15:40:47.442Z
+    SHA256: 5a9e470588a2c80ea8960eb2b0e9233a32ec1309d1590bc6707e5033b2e501b5
+    Content start
+```typescript
+// trueData/utils/countryToContinent.ts
+// Canonical country -> continent mapping (sample). Extend or replace with a full ISO dataset as needed.
+export const countryToContinent: Record<string, string> = {
+  US: "North America",
+  CA: "North America",
+  MX: "North America",
+  BR: "South America",
+  AR: "South America",
+  GB: "Europe",
+  FR: "Europe",
+  DE: "Europe",
+  CN: "Asia",
+  JP: "Asia",
+  IN: "Asia",
+  AU: "Oceania",
+  NZ: "Oceania",
+  ZA: "Africa",
+  EG: "Africa",
+  // Add more entries or load a full JSON file at runtime if you prefer.
+};
+
+```
+    Content end
+
+  - FILE: trueData\utils\exporters.ts
+    Size: 1128 bytes
+    Modified: 2025-11-13T15:47:06.208Z
+    SHA256: 7207f3809bd0d3deebd737ef1706f00f7a8189402f5cdd8749d7ec58302cc300
+    Content start
+```typescript
+// trueData/utils/exporters.ts
+import fs from "fs";
+import path from "path";
+import { Data } from "../core/sampleEntries";
+
+export function exportEventJson(outDir: string, event: Data): string {
+  fs.mkdirSync(outDir, { recursive: true });
+  const file = path.join(outDir, `${event.id}.json`);
+  fs.writeFileSync(file, JSON.stringify(event.toJSON(), null, 2), "utf8");
+  return file;
+}
+
+export function exportEventMd(outDir: string, event: Data): string {
+  fs.mkdirSync(outDir, { recursive: true });
+  const file = path.join(outDir, `${event.id}.md`);
+  const md = [
+    `# Event ${event.id}`,
+    `**Type:** ${event.type}`,
+    `**Creation:** ${event.creation}`,
+    `**Provenance:** ${event.provenance.method}; source: ${event.provenance.source}; confirmed: ${event.provenance.confirmedByUser}`,
+    `**Location:** ${event.location.continent} → ${event.location.country} → ${event.location.city} → ${event.location.tzName} (${event.location.abbreviation})`,
+    `**Local date/time:** ${event.location.dateTime}`,
+    "",
+  ].join("\n");
+  fs.writeFileSync(file, md, "utf8");
+  return file;
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\prompt.ts
+    Size: 385 bytes
+    Modified: 2025-11-13T15:46:17.689Z
+    SHA256: 895f16118fcfb837ac3db96f31efa60af6b5c950e509f9acdeeff0bf3815b5ed
+    Content start
+```typescript
+// trueData/utils/prompt.ts
+import readline from "node:readline";
+
+export function promptString(question: string): Promise<string> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => {
+    rl.question(`${question}: `, answer => {
+      rl.close();
+      resolve((answer || "").trim());
+    });
+  });
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\provenanceAudit.ts
+    Size: 3493 bytes
+    Modified: 2025-11-27T10:57:38.057Z
+    SHA256: 9c3c13ddb211ea8ce8e7005daf87bdb412ba820f231be453f66ae9470bb9d178
+    Content start
+```typescript
+// trueData/utils/provenanceAudit.ts
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { formatError } from "../../utils/errorReporter.js";
+
+export interface ProvenanceRecord {
+  id: string; // unique record id
+  eventId?: string;
+  method: "entered" | "inferred" | "system-default";
+  source: "coordinates" | "tzName" | "system" | string;
+  rawResolverOutput?: any;
+  userConfirmed?: boolean;
+  note?: string;
+  timestamp: string;
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Keep existing append-only audit (repo-relative, not CWD)
+const AUDIT_DIR = path.resolve(__dirname, "../../provenance");
+const AUDIT_FILE = path.join(AUDIT_DIR, "audit.log");
+
+async function ensureAuditDir(): Promise<void> {
+  await fs.promises.mkdir(AUDIT_DIR, { recursive: true });
+}
+
+export async function appendProvenance(record: ProvenanceRecord): Promise<void> {
+  await ensureAuditDir();
+  const line = JSON.stringify(record) + "\n";
+  await fs.promises.appendFile(AUDIT_FILE, line, { encoding: "utf8" });
+}
+
+// New: CLI-oriented run() that produces deterministic artifacts under trueData/logs/
+type RunOptions = {
+  logDir?: string;   // default: "trueData/logs"
+  root?: string;     // default: "."
+  verbose?: boolean;
+  json?: boolean;
+};
+
+export async function run(options: RunOptions = {}) {
+  const logDir = path.resolve(process.cwd(), options.logDir ?? "trueData/logs");
+  const humanLog = path.resolve(logDir, "provenance-audit.log");
+  const jsonOut = path.resolve(logDir, "provenance-report.json");
+
+  try {
+    await fs.promises.mkdir(logDir, { recursive: true });
+
+    // Aggregate a simple report from the append-only audit file (if present)
+    let count = 0;
+    let sampleSources = new Set<string>();
+    try {
+      const content = await fs.promises.readFile(AUDIT_FILE, "utf8");
+      const lines = content.trim().length ? content.trim().split("\n") : [];
+      for (const line of lines) {
+        const rec = JSON.parse(line) as ProvenanceRecord;
+        count += 1;
+        if (rec.source) sampleSources.add(rec.source);
+      }
+    } catch {
+      // No audit file yet; proceed with an empty summary
+    }
+
+    const report = {
+      status: "ok",
+      recordsCount: count,
+      sources: Array.from(sampleSources),
+      auditFile: path.relative(process.cwd(), AUDIT_FILE),
+      summary: count > 0 ? `Found ${count} provenance records` : "No provenance records found",
+    };
+
+    const humanSummary = `Provenance audit: ${report.summary}`;
+    await fs.promises.writeFile(humanLog, `${humanSummary}\n`, "utf8");
+    await fs.promises.writeFile(jsonOut, JSON.stringify(report, null, 2), "utf8");
+
+    if (options.verbose) {
+      console.log(humanSummary);
+    }
+    return report;
+  } catch (err: any) {
+    const error = formatError(err, { source: "trueData/utils/provenanceAudit.ts", func: "run" });
+    const header = `[ERROR] ${error.message} (${error.source}:${error.location})`;
+
+    try {
+      await fs.promises.mkdir(path.dirname(humanLog), { recursive: true });
+      await fs.promises.writeFile(humanLog, `${header}\n${error.stack ?? ""}\n`, "utf8");
+      await fs.promises.writeFile(jsonOut, JSON.stringify({ status: "error", error }, null, 2), "utf8");
+    } catch {
+      // If even logging fails, at least emit to stderr
+    }
+    console.error(header);
+    throw err;
+  }
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\provenanceModel..ts
+    Size: 524 bytes
+    Modified: 2025-11-13T15:54:35.043Z
+    SHA256: eef261960350a6378a05a4139a57ae6f744254990231d1b497815225b2fc2729
+    Content start
+```typescript
+// trueData/utils/provenanceModel.ts
+export interface Provenance {
+  method: "entered" | "inferred" | "system-default";
+  source: string; // "coordinates" | "tzName" | "system" | "api"
+  confirmedByUser?: boolean;
+  timestamp: string;
+  resolverVersion?: string; // e.g., "geo-tz@1.0.0"
+  datasetVersion?: string; // e.g., "countryToContinent@2025-11-13"
+  confidence?: number; // 0..1
+  rawResolverOutput?: any;
+  auditId?: string; // uuid
+  signature?: string; // optional HMAC or signature over the record
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\resolveFromCoordinates.ts
+    Size: 1529 bytes
+    Modified: 2025-11-13T15:55:28.134Z
+    SHA256: f8a7970e2d274a77f2406a6e6dc93de2c47ea2e50982aa47102bff042b46aa89
+    Content start
+```typescript
+// trueData/utils/resolveFromCoordinates.ts
+import { find } from "geo-tz";
+import { resolveTimeZone, ResolvedLocation } from "./resolveTimeZone";
+import { appendProvenance } from "./provenanceAudit";
+import { v4 as uuidv4 } from "uuid";
+
+export interface CoordinateResolverResult {
+  location: ResolvedLocation;
+  raw: { tzCandidates: string[]; lat: number; lon: number };
+}
+
+/**
+ * Resolve coordinates -> IANA timezone -> ResolvedLocation.
+ * Logs raw resolver output to provenance audit store.
+ */
+export async function resolveFromCoordinates(coords: [number, number]): Promise<CoordinateResolverResult> {
+  const [lat, lon] = coords;
+  let tzCandidates: string[] = [];
+  let tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || "Etc/UTC";
+
+  try {
+    tzCandidates = find(lat, lon); // geo-tz returns an array
+    if (Array.isArray(tzCandidates) && tzCandidates.length > 0) {
+      tzName = tzCandidates[0];
+    }
+  } catch (err) {
+    // If geo-tz fails, keep system timezone as fallback
+    tzCandidates = [];
+  }
+
+  const location = resolveTimeZone(tzName);
+
+  // Append provenance audit record for this resolution
+  const record = {
+    id: uuidv4(),
+    method: "inferred" as const,
+    source: "coordinates",
+    rawResolverOutput: { tzCandidates, lat, lon },
+    userConfirmed: false,
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    await appendProvenance(record);
+  } catch {
+    // Non-fatal: audit failure should not break resolution
+  }
+
+  return { location, raw: { tzCandidates, lat, lon } };
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\resolveTimeZone.ts
+    Size: 1950 bytes
+    Modified: 2025-11-13T15:43:12.323Z
+    SHA256: 9f8b6b5dc1082bb01e43b70333c233ea59121b1503e75be6ca64e83810bdfbeb
+    Content start
+```typescript
+// trueData/utils/resolveTimeZone.ts
+import * as ct from "countries-and-timezones";
+import { countryToContinent } from "./countryToContinent";
+
+export interface ResolvedLocation {
+  tzName: string;
+  abbreviation: string;
+  continent: string;
+  country: string;
+  city: string;
+  dateTime: string;
+}
+
+/**
+ * Resolve IANA zone name to a narratable location snapshot.
+ */
+export function resolveTimeZone(tzName: string): ResolvedLocation {
+  const tzInfo = ct.getTimezone(tzName);
+
+  const countryCode =
+    tzInfo && Array.isArray((tzInfo as any).countries) && (tzInfo as any).countries.length > 0
+      ? (tzInfo as any).countries[0]
+      : (tzInfo as any).country ?? undefined;
+
+  const countryInfo = countryCode ? ct.getCountry(countryCode) : null;
+
+  // Use canonical mapping if library doesn't provide continent
+  const continent =
+    countryCode && countryToContinent[countryCode]
+      ? countryToContinent[countryCode]
+      : // fallback to library continent if present (normalize)
+      (countryInfo && typeof (countryInfo as any).continent === "string"
+        ? String((countryInfo as any).continent).toUpperCase()
+        : "Unknown");
+
+  const country =
+    countryInfo && typeof (countryInfo as any).name === "string"
+      ? (countryInfo as any).name
+      : countryCode ?? "Unknown";
+
+  const parts = tzName.split("/");
+  const city = parts[1] ?? "Unknown";
+
+  // Abbreviation: prefer Intl short name; fallback to "UNK"
+  let abbr = "UNK";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: tzName, timeZoneName: "short" })
+      .formatToParts(new Date());
+    abbr = parts.find(p => p.type === "timeZoneName")?.value ?? "UNK";
+  } catch {
+    abbr = "UNK";
+  }
+
+  const dateTime = new Date().toLocaleString("en-US", { timeZone: tzName });
+
+  return {
+    tzName,
+    abbreviation: abbr,
+    continent,
+    country,
+    city,
+    dateTime,
+  };
+}
+
+```
+    Content end
+
+  - FILE: trueData\utils\signature.ts
+    Size: 253 bytes
+    Modified: 2025-11-13T15:54:54.380Z
+    SHA256: 2cab80280f63d6499fa1b6256689066eb71a2e6706fc03eb78ccb72035cb062d
+    Content start
+```typescript
+// trueData/utils/signature.ts
+import crypto from "crypto";
+
+export function signRecord(secret: string, payload: object): string {
+  const h = crypto.createHmac("sha256", secret);
+  h.update(JSON.stringify(payload));
+  return h.digest("hex");
+}
+
+```
+    Content end
+
+- FILE: trueData\schema.json
+  Size: 811 bytes
+  Modified: 2025-11-13T14:59:04.389Z
+  SHA256: 9a4b05b73ee78ce424b29b6b76aa9957e3acd26af89181bda4a0e0d644c45742
+  Content start
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "enum": ["data", "event", "command", "input", "session"] },
+    "creation": { "type": "string", "format": "date-time" },
+    "location": {
+      "type": "object",
+      "properties": {
+        "tzName": { "type": "string" },
+        "abbreviation": { "type": "string" },
+        "continent": { "type": "string" },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
+        "dateTime": { "type": "string" }
+      },
+      "required": ["tzName", "continent", "country", "city", "dateTime"]
+    },
+    "provenance": { "enum": ["entered", "inferred", "system-default"] }
+  },
+  "required": ["id", "type", "creation", "location", "provenance"],
+  "additionalProperties": false
+}
+
+```
+  Content end
+
+- FILE: trueData\testFile.ts
+  Size: 1912 bytes
+  Modified: 2025-11-13T16:01:31.725Z
+  SHA256: 039a3856a13c16b3bd0801e77bce35fce37d6707e0b1e3f7e6616ba69134c9b9
+  Content start
+```typescript
+// trueData/testFile.ts
+import { withConsent } from "./utils/consentMiddleware";
+import { promptString } from "./utils/prompt";
+import { Data } from "./core/sampleEntries";
+import { exportEventJson, exportEventMd } from "./utils/exporters";
+
+async function main() {
+  // Ask consent for coordinates (sensitive)
+  const consentCoords = await withConsent({ reason: "capturing coordinates to resolve timezone" }, async () => true);
+
+  let event: Data | null = null;
+
+  if (consentCoords) {
+    // Ask user to enter coordinates (latitude, longitude)
+    const latStr = await promptString("Enter latitude (e.g., 40.7128)");
+    const lonStr = await promptString("Enter longitude (e.g., -74.0060)");
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      console.log("Invalid coordinates entered. Falling back to timezone prompt.");
+    } else {
+      // Use async factory for coordinates
+      event = await Data.createWithCoordinates("event", [lat, lon], true);
+    }
+  }
+
+  if (!event) {
+    // Ask user for timezone string as voluntary fallback
+    const consentTz = await withConsent({ reason: "entering timezone string manually" }, async () => true);
+    if (consentTz) {
+      const tzName = await promptString("Enter your timezone (e.g., America/New_York)");
+      if (tzName) {
+        event = new Data("event", { tzName, provenance: { confirmedByUser: true } as any });
+      }
+    }
+  }
+
+  // Final fallback: system-default
+  if (!event) {
+    event = new Data("event");
+  }
+
+  console.log(event.get());
+
+  const outDir = "./logs";
+  const jsonPath = exportEventJson(outDir, event);
+  const mdPath = exportEventMd(outDir, event);
+
+  console.log(`Wrote:\n- ${jsonPath}\n- ${mdPath}`);
+}
+
+main().catch(err => {
+  console.error("Run failed:", err);
+  process.exit(1);
+});
+
+```
+  Content end
+
+- FILE: trueData\validator.ts
+  Size: 1942 bytes
+  Modified: 2025-11-27T14:52:13.088Z
+  SHA256: 2f2eca88139253c950b136e715a12a399d8a03dcd03ac3d63c40c68f5cb96b27
+  Content start
+```typescript
+// trueData/validator.ts
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { formatError } from "../utils/errorReporter.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+type RunOptions = {
+  logDir?: string;   // default: "trueData/logs"
+  root?: string;     // default: "."
+  verbose?: boolean;
+  json?: boolean;
+};
+
+export async function run(options: RunOptions = {}) {
+  const logDir = path.resolve(process.cwd(), options.logDir ?? "trueData/logs");
+  const humanLog = path.resolve(logDir, "schema-validation.log");
+  const jsonOut = path.resolve(logDir, "schema-validation.json");
+
+  try {
+    await fs.promises.mkdir(logDir, { recursive: true });
+
+    // Resolve schema.json relative to this file
+    const schemaPath = path.resolve(__dirname, "schema.json");
+    const schemaRaw = await fs.promises.readFile(schemaPath, "utf8");
+    const schema = JSON.parse(schemaRaw);
+
+    // TODO: actual validation logic
+    const result = { status: "ok", schemaKeys: Object.keys(schema) };
+
+    const summary = `Validation successful: ${result.schemaKeys.length} keys validated`;
+    await fs.promises.writeFile(humanLog, `${summary}\n`, "utf8");
+    await fs.promises.writeFile(jsonOut, JSON.stringify(result, null, 2), "utf8");
+
+    if (options.verbose) console.log(summary);
+    return result;
+  } catch (err: any) {
+    const error = formatError(err, { source: "trueData/validator.ts", func: "run" });
+    const header = `[ERROR] ${error.message} (${error.source}:${error.location})`;
+
+    await fs.promises.mkdir(path.dirname(humanLog), { recursive: true });
+    await fs.promises.writeFile(humanLog, `${header}\n${error.stack ?? ""}\n`, "utf8");
+    await fs.promises.writeFile(jsonOut, JSON.stringify({ status: "error", error }, null, 2), "utf8");
+
+    console.error(header);
+    throw err;
+  }
+}
+
+```
+  Content end
+

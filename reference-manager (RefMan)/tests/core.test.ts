@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { createReference, tagAdd, tagRemove, updateMeta, relate, project } from "../src/core/index.js";
+import { 
+  createReference, 
+  tagAdd, 
+  tagRemove, 
+  updateMeta, 
+  relate, 
+  project } from "../barrel-refman.js";
 
 describe("core constructors", () => {
   it("creates reference and event", () => {

@@ -7,9 +7,12 @@
     "node": ">=24.0.0 <25.0.0"
   },
   "scripts": {
-    "test": "jest",
+    "test:jest": "jest",
     "vitest": "vitest run",
     "test:watch": "vitest",
+    "test:vitest": "vitest --config ./config/vitest.config.ts",
+    "test:vitest:ci": "vitest --config ./config/vitest.config.ts --run",
+    "test:vitest:coverage": "vitest --config ./config/vitest.config.ts --coverage",
     "format": "prettier --write .",
     "clean": "rimraf dist",
     "build": "tsc",

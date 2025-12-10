@@ -1,8 +1,9 @@
-import AjvModule, { ErrorObject } from "ajv";
+import AjvModule from "ajv";
+import type { ErrorObject } from "ajv";
 import { createHash } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import { Session } from "./buildSession.js";
+import type { Session } from "./buildSession.js";
 
 // load the canonical schema once at startup
 const schemaPath = path.resolve(__dirname, "../docs/schema.json");

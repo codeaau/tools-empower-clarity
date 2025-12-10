@@ -2,9 +2,12 @@
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
-
-import { createReference } from "../src/core/index.js";
-import { appendEvent, ensureInit, listEvents, listReferences, projectReference } from "../src/storage/local.js";
+import { 
+  createReference, 
+  appendEvent, 
+  ensureInit, 
+  listReferences, 
+  projectReference } from "../barrel-refman.js";
 
 function rootDir(): string {
   // default to current working dir
@@ -25,7 +28,7 @@ async function cmdAdd(args: string[]) {
 
   const title = titleIdx >= 0 ? args[titleIdx + 1] : undefined;
   if (!title) {
-    console.error("Missing --title");
+    console.error(`Missing '--title'`);
     process.exit(1);
   }
   const type = typeIdx >= 0 ? (args[typeIdx + 1] as any) : undefined;

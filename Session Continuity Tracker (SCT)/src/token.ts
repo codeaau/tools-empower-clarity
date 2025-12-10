@@ -1,11 +1,6 @@
 // src/token.ts
 import { randomUUID } from "crypto";
-
-export interface TrackingToken {
-  id: string;
-  type: string;
-  createdAt: string;
-}
+import type { TrackingToken } from "../types-sct.js";
 
 /**
  * Create a lightweight tracking token.

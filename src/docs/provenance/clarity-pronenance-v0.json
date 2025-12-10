@@ -1,0 +1,17 @@
+{
+  "$id": "clarity-provenance-v0",
+  "version": "0",
+  "description": "Minimal, append-only provenance record for CLARITY artifacts.",
+  "type": "object",
+  "required": ["clock", "actor", "task", "source", "inputs", "outputs", "digest"],
+  "properties": {
+    "clock": { "type": "string", "description": "ISO timestamp at start of task" },
+    "actor": { "type": "string", "description": "Process or human initiating" },
+    "task": { "type": "string", "description": "Subsystem.operation (e.g., refman.index)" },
+    "source": { "type": "string", "description": "Subsystem name" },
+    "inputs": { "type": "array", "items": { "type": "string" }, "description": "Input paths or URIs" },
+    "outputs": { "type": "array", "items": { "type": "string" }, "description": "Output paths" },
+    "digest": { "type": "string", "description": "SHA256 of primary output" },
+    "notes": { "type": "string" }
+  }
+}
