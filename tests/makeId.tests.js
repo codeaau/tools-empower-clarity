@@ -1,5 +1,5 @@
 // makeId.test.js
-const { makeId } = require('./makeId');
+import { makeId } from '../src/core/makeId.js';
 
 test('makeId returns expected format and prefix', () => {
   const id = makeId('S', new Date('2025-10-29T14:00:00Z'));

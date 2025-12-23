@@ -14,6 +14,7 @@ export interface Provenance {
   confirmedByUser?: boolean;
   timestamp: string;
   rawResolverOutput?: any;
+  [other: string]: any;
 }
 
 export class Data {

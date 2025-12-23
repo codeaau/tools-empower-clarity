@@ -11,7 +11,7 @@ export interface Factual {
 }
 
 export interface Resulting {
-    outcome?: string;       // files/folders created and/or affected, semi-colon delimited
+    outcome: string;       // files/folders created and/or affected, semi-colon delimited
     notes?: string;
 }
 
@@ -43,7 +43,7 @@ export function buildSession(
     alias: string,
     intention: Intention,
     factual: Factual,
-    resulting: Resulting = {}): Session {
+    resulting: Resulting = {outcome: "n/a", notes: "n/a"}): Session {
         const sessionId = makeId(prefix);
         const now = new Date().toISOString();
         return  {
@@ -56,5 +56,5 @@ export function buildSession(
                 created_by: alias,
             },
             edits: [],
-        };
+        } as Session;
 }

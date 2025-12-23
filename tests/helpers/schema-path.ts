@@ -7,5 +7,5 @@ const __dirname = path.dirname(__filename);
 
 export function resolveSchema(...segments: string[]) {
   // Always resolve from repo root for determinism
-  return path.resolve(__dirname, '../../schemas', ...segments);
+  return path.resolve(__dirname, '../../', ...segments);
 }

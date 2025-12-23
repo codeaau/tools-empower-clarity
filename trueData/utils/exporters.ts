@@ -1,6 +1,6 @@
 // trueData/utils/exporters.ts
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { Data } from "../core/sampleEntries";
 
 export function exportEventJson(outDir: string, event: Data): string {

@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 export function generateId(prefix: string = "CLARITY"): string {
   const timestamp = Date.now().toString(36);

@@ -1,6 +1,6 @@
 // src/session.ts
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { createToken } from "./token.js";
 import type { TrackingToken, SessionState } from "../types-sct.js";
 

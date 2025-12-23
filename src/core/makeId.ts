@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 export function makeId(prefix: string = 'U', date: Date = new Date()): string {
   if (!/^[A-Z]$/.test(prefix)) {

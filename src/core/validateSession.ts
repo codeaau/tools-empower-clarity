@@ -1,10 +1,10 @@
 import AjvModule from "ajv";
 import addFormatsModule from "ajv-formats";
 import type { ErrorObject } from "ajv";
-import { createHash } from "crypto";
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Session } from "./buildSession.js";
 
 // Resolve schema path for both ESM and CommonJS

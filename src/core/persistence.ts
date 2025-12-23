@@ -1,6 +1,6 @@
 // src/core/persistence.ts
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { CONFIG } from './config.js';
 import { generateId } from './ids.js';
 

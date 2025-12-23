@@ -1,5 +1,5 @@
 // src/token.ts
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import type { TrackingToken } from "../types-sct.js";
 
 /**
@@ -13,5 +13,5 @@ export function createToken(type = "GENERIC"): TrackingToken {
     id: `${type}-${timestamp}-${uuidShort}`,
     type,
     createdAt: new Date().toISOString(),
-  };
+  } as TrackingToken;
 }
