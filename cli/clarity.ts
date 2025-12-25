@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import type { OptionValues } from "commander";
 import { createPatch } from "../src/patches/patch-utils.js";
-import { run as validate } from "../trueData/validator.js";   // <-- add this import
+import { run as validate } from "../trueData/validator.js";
 import { run as audit } from "../trueData/utils/provenanceAudit.js";
 
 const program = new Command();

@@ -8,11 +8,11 @@
  *   node export-repo-readable.js --out repo_snapshot.txt --contents --max-bytes 200,000
  */
 
-import fs, { createReadStream, createWriteStream } from 'fs';
-import { join, relative, extname } from 'path';
-import { createHash } from 'crypto';
+import fs, { createReadStream, createWriteStream } from 'node:fs';
+import { join, relative, extname } from 'node:path';
+import { createHash } from 'node:crypto';
 const {promises: fsp} = fs;
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 
 const ARGV = process.argv.slice(2);
 const getArg = (name, def) => {
